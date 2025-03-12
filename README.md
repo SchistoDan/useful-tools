@@ -1,5 +1,5 @@
 # useful-tools
-Collection of useful tools and script, developed for a range of functions
+A collection of useful tools and script, developed for a range of bioinformatics-related functions.
 
 
 ## taxid_fetcher.py
