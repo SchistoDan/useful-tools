@@ -50,3 +50,21 @@ input:
 output:
 - Path to output directory where BLAST results will be saved
 ```
+
+
+
+
+
+## filer_mover.py
+Moves files containing user-specified string in the filename in one directory to another.
+ ```bash
+python filer_mover.py <input_directory> <output_directory> <string_in_filename>
+
+input:
+- Directory to search for files to rename
+- The string in the filename to search for (e.g. results, output, etc.)
+
+output:
+- Directory to move specified files to
+```
+
