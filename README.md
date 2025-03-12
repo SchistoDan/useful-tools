@@ -14,3 +14,19 @@ input:
 output:
 - CSV file with taxid, matched_rank (taxonomic rank taxid corresponds to), NCBI lineage for taxid, lineage_mismatch (yes=higher taxonomy of input taxonomic heirarchy does not match higher taxonomy of fetched lineage) appended.
 ```
+
+
+
+
+## add_sequences.py
+ Add sequences from one FASTA file to multiple other FASTA files, such as might be necessary when adding several possible contaminant sequences into a FASTA file containing a reference sequence. The script reads all FASTA files in the specified target directory, appends sequences from a specified additions file to each of them, and saves the modified FASTA files to the specified output directory.
+ ```bash
+python add_sequences.py --target_dir [TARGET_DIR] --additions_file [ADDITIONS_FILE] [--output_dir OUTPUT_DIR]
+
+input:
+- TARGET_DIR - Directory containing the target FASTA files to which sequences will be added.
+- ADDITIONS_FILE - Path to the FASTA file containing the sequences to be added to each target FASTA file.
+
+output:
+OUTPUT_DIR - Directory where the modified FASTA files will be saved. Defaults to 'output' if not provided.
+```
