@@ -68,3 +68,18 @@ output:
 - Directory to move specified files to
 ```
 
+
+
+
+## csv_combiner.py
+Combine multiple CSV files into a single file, preserving header structure from first input file (subsequent input file columns will be reordered to align with the first input files header order).
+
+ ```bash
+python csv_combiner.py -i <input1.csv> <input2.csv> <input3.csv> <etc> -o <output.csv>  
+
+input:
+- Input CSV files to combine
+
+output:
+- Output CSV file path 
+```
