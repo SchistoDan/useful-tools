@@ -86,5 +86,29 @@ output:
 
 
 
+
+## fatsa_length_stats.py
+Calculate the number of sequences, minimum length, maximum length, and average length of sequences present within an input multi-fasta, and output these statistics to a text file.
+
+ ```bash
+python fasta_length_stats.py -i <multi.fasta> -o <length_stats.txt>  
+
+input:
+- Input multi-FASTA file
+
+output:
+- Output TXT file containing sequence length statistics.
+```
+Filename: multi.fasta
+Total sequences: 18602
+Minimum length: 51
+Minimum length sequence: >shortest sequence header
+Maximum length: 1105
+Maximum length sequence: >longest sequence header
+Average length: 188.94
+```
+```
+
+
 ## csv_splitter.py
 
