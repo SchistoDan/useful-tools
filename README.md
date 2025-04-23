@@ -111,3 +111,7 @@ Average length: 188.94
 
 ## csv_splitter.py
 
+
+## taxonomy_resolver.py ##
+takes taxonomy info and fetches taxid, etc.
+
