@@ -78,10 +78,10 @@ Combine multiple CSV files into a single file, preserving header structure from 
 python csv_combiner.py -i <input1.csv> <input2.csv> <input3.csv> <etc> -o <output.csv>  
 
 input:
-- Input CSV files to combine
+- CSV files to combine
 
 output:
-- Output CSV file path 
+- CSV file path 
 ```
 
 
@@ -94,10 +94,10 @@ Calculate the number of sequences, minimum length, maximum length, and average l
 python fasta_length_stats.py -i <multi.fasta> -o <length_stats.txt>  
 
 input:
-- Input multi-FASTA file
+- Multi-FASTA file
 
 output:
-- Output TXT file containing sequence length statistics.
+- TXT file containing sequence length statistics.
 
 Filename: multi.fasta
 Total sequences: 18602
@@ -110,8 +110,15 @@ Average length: 188.94
 
 
 ## csv_splitter.py
+Splits a CSV file into multiple smaller CSV files with a specified number of rows per file. Each output file will contain the header row from the original CSV file followed by the specified number of data rows.
+If the input CSV has fewer rows than specified for the final chunk, all remaining rows will be included in the last output file.
 
+ ```bash
+python csv_splitter.py input_file rows_per_file
 
-## taxonomy_resolver.py ##
-takes taxonomy info and fetches taxid, etc.
+input:
+- Path to the input CSV file to be split
 
+output:
+-  Number of rows each output file should contain (excluding header)
+```
