@@ -5,6 +5,29 @@ FASTA Sequence Filter
 This script extracts sequences from a multi-FASTA file based on a list of IDs.
 It creates a new FASTA file with the matched sequences and outputs a CSV log
 of which IDs were found and which weren't.
+
+Inputs:
+    -i, --input: Path to the input multi-FASTA file
+    -o, --output: Path to the output FASTA file where matched sequences will be saved
+    -l, --log: Path to the output CSV log file for tracking found/not found IDs
+    -id, --ids: Path to a text file containing IDs to search for (one per line)
+
+Outputs:
+    1. A FASTA file containing only the sequences that match the provided IDs
+    2. A CSV file with two columns: "Found" and "Not Found"
+       - "Found" column lists IDs that were found in the input FASTA file
+       - "Not Found" column lists IDs that were not found
+
+Usage:
+    python fasta_filter.py -i input.fasta -o filtered.fasta -l results.csv -id ids.txt
+
+    # If your IDs are in a file called 'sample_ids.txt':
+    python fasta_filter.py -i sequences.fasta -o matched_sequences.fasta -l id_report.csv -id sample_ids.txt
+
+Notes:
+    - IDs are matched if they appear anywhere in the FASTA header (partial match)
+    - FASTA headers should start with '>' as per standard FASTA format
+    - The script preserves the entire original header in the output file
 """
 
 import argparse
@@ -15,7 +38,6 @@ from pathlib import Path
 
 
 def parse_arguments():
-    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Filter FASTA sequences by IDs")
     parser.add_argument("-i", "--input", required=True, help="Input FASTA file")
     parser.add_argument("-o", "--output", required=True, help="Output FASTA file")
@@ -25,7 +47,6 @@ def parse_arguments():
 
 
 def read_ids_from_file(ids_file):
-    """Read IDs from a file, one per line."""
     try:
         with open(ids_file, 'r') as f:
             return [line.strip() for line in f if line.strip()]
@@ -35,11 +56,6 @@ def read_ids_from_file(ids_file):
 
 
 def filter_fasta(input_file, output_file, ids_to_find):
-    """
-    Filter FASTA sequences based on IDs.
-    
-    Returns a tuple of (found_ids, not_found_ids)
-    """
     found_ids = set()
     current_id = None
     current_sequence = []
@@ -89,7 +105,6 @@ def filter_fasta(input_file, output_file, ids_to_find):
 
 
 def write_log_csv(log_file, found_ids, not_found_ids):
-    """Write a CSV log file with 'Found' and 'Not Found' columns."""
     try:
         with open(log_file, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
@@ -110,7 +125,6 @@ def write_log_csv(log_file, found_ids, not_found_ids):
 
 
 def main():
-    """Main function to run the script."""
     args = parse_arguments()
     
     # Check if input file exists
