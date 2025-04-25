@@ -122,3 +122,24 @@ input:
 output:
 -  Number of rows each output file should contain (excluding header)
 ```
+
+
+## fasta_extractor.py
+Extracts sequences from a multi-FASTA file based on a list of IDs. It creates a new FASTA file with the matched sequences and outputs a CSV log of which IDs were found and which weren't.
+
+ ```bash
+    python fasta_filter.py -i input.fasta -o filtered.fasta -l results.csv -id ids.txt
+
+input:
+    -i, --input: Path to the input multi-FASTA file
+    -o, --output: Path to the output FASTA file where matched sequences will be saved
+    -l, --log: Path to the output CSV log file for tracking found/not found IDs
+    -id, --ids: Path to a text file containing IDs to search for (one per line)
+
+output:
+    1. A FASTA file containing only the sequences that match the provided IDs
+    2. A CSV file with two columns: "Found" and "Not Found"
+       - "Found" column lists IDs that were found in the input FASTA file
+       - "Not Found" column lists IDs that were not found
+
+```
