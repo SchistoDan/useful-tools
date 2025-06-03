@@ -1,5 +1,5 @@
 # useful-tools
-A collection of useful tools and script, developed for a range of bioinformatics-related functions.
+A collection of useful tools/scripts/commands, developed for a range of bioinformatics-related functions.
 
 
 ## taxid_fetcher.py
@@ -154,3 +154,90 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
  OUTPUT_FILE = ${INPUT_DIR##*/}.tar.gz
 
 ```
+
+
+
+# useful-commands
+
+```bash#
+**General**
+# Count files with specific extension in dir
+	find /path/to/directory -type f -name "*.fasta" | wc -l
+
+# Count subdirs in dir
+	find /path/to/directory -mindepth 1 -type d | wc -l
+
+# Show files with non-ASCII characters
+	find /gpfs/nhmfsa/bulk/share/data/mbl/share/scratch/MGE/protein_references/benchmarking_data_570_refs-contam_refs_final14 -type f -print0 | LC_ALL=C grep -l '.' -z
+
+# Remove any hidden files in dir
+	find /gpfs/nhmfsa/bulk/share/data/mbl/share/scratch/MGE/cox1/benchmarking/contam/new_mge_patch-021224/mge_standard_r1_13_15_s50_100_benchmarking_contam -type f -name ".*" -delete
+	
+# tar and compress directory
+	tar czf name_of_directory_to_tar.tar.gz name_of_directory_to_tar/
+
+# untar and gunzip compressed file
+	tar -xfv archive.tar -C /path/to/destination
+
+# Change file encoding to utf-8
+	
+# List number of files in directory
+	ls -1 | wc -l
+
+# List number of files in dir and all subdirs that belong to memory
+	find . -user dparsons -type f | wc -l
+	
+
+**SLURM**
+# View job info
+	sacct --format=JobID,JobName,MaxRSS%32,MaxVMSize%32,Elapsed,Partition,End,ExitCode
+		+ 	--job [JobID] = to specify 1 job only
+
+# View job resource usage
+	sstat --format=JobID,AveCPU,AveRSS,AveVMSize -j [job_id]
+	
+# Monitor live cluster memory usage
+	watch -n 1 'free -h'
+
+
+**Conda**
+# Create .yaml from conda env:
+	conda env export > [environment].yaml
+	
+# Create .yaml from conda env without platform-specific build numbers (more portable):
+	conda env export --no-builds > environment.yaml
+
+# Create conda env from .yaml file:
+	conda env create -f [environment].yaml
+
+# Remove/delete conda env:
+	conda env remove --name [env_name]
+	
+# Update all packages in env:
+	conda update --all
+	
+# Update conda env with updated yaml (--prune removes uneeded dependencies)
+	conda env update --name myenv --file environment.yaml --prune
+
+
+**Screen**
+# Start a new screen session
+	screen
+
+# Start a named screen session
+	screen -S session_name
+
+# List running screen sessions
+	screen -ls
+
+# Reattach to a session
+	screen -r session_name   # if you know the name
+	screen -r 1234          # if you know the process ID
+
+# Detach from current session (without killing it)
+# Press Ctrl+A, then press d
+
+# Kill a screen session
+	screen -X -S session_name quit
+```
+
