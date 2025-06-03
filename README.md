@@ -124,6 +124,8 @@ output:
 ```
 
 
+
+
 ## fasta_extractor.py
 Extracts sequences from a multi-FASTA file based on a list of IDs. It creates a new FASTA file with the matched sequences and outputs a CSV log of which IDs were found and which weren't.
 
@@ -141,5 +143,19 @@ output:
     2. A CSV file with two columns: "Found" and "Not Found"
        - "Found" column lists IDs that were found in the input FASTA file
        - "Not Found" column lists IDs that were not found
+
+```
+
+
+
+
+## compress.sh
+Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
+
+```bash
+    sbatch compress.sh
+
+ INPUT_DIR = Path to target directory to compress (set in script)
+ OUTPUT_FILE = ${INPUT_DIR##*/}.tar.gz
 
 ```
