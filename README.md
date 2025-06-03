@@ -33,9 +33,6 @@ OUTPUT_DIR - Directory where the modified FASTA files will be saved. Defaults to
 
 
 
-
-
-
 ## blast.sh
 Runs BLASTn on a directory of FASTA files or a single multi-FASTA file, where output files are named according to sequence headers in the FASTA file. The script can skip processing an input FASTA file or sequence if the output file already exists. Inputs, outputs and parameters must be changed in the script (i.e. they are hard-coded).
  ```bash
@@ -50,8 +47,6 @@ input:
 output:
 - Path to output directory where BLAST results will be saved
 ```
-
-
 
 
 
@@ -130,7 +125,7 @@ output:
 Extracts sequences from a multi-FASTA file based on a list of IDs. It creates a new FASTA file with the matched sequences and outputs a CSV log of which IDs were found and which weren't.
 
  ```bash
-    python fasta_filter.py -i input.fasta -o filtered.fasta -l results.csv -id ids.txt
+    python fasta_extractor.py -i input.fasta -o filtered.fasta -l results.csv -id ids.txt
 
 input:
     -i, --input: Path to the input multi-FASTA file
