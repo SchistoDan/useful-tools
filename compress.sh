@@ -7,7 +7,7 @@
 
 
 # Activate conda env
-source ~/.bashrc  
+source /mnt/apps/users/dparsons/conda/etc/profile.d/conda.sh
 conda activate dds
 
 # Set input directory
