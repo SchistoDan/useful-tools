@@ -159,8 +159,8 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 
 # useful-commands
 
-```bash#
 **General**
+```bash
 # Count files with specific extension in dir
 	find /path/to/directory -type f -name "*.fasta" | wc -l
 
@@ -186,9 +186,10 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 
 # List number of files in dir and all subdirs that belong to memory
 	find . -user dparsons -type f | wc -l
-	
+```
 
 **SLURM**
+```
 # View job info
 	sacct --format=JobID,JobName,MaxRSS%32,MaxVMSize%32,Elapsed,Partition,End,ExitCode
 		+ 	--job [JobID] = to specify 1 job only
@@ -198,9 +199,10 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 	
 # Monitor live cluster memory usage
 	watch -n 1 'free -h'
-
+```
 
 **Conda**
+```
 # Create .yaml from conda env:
 	conda env export > [environment].yaml
 	
@@ -218,9 +220,10 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 	
 # Update conda env with updated yaml (--prune removes uneeded dependencies)
 	conda env update --name myenv --file environment.yaml --prune
-
+```
 
 **Screen**
+```
 # Start a new screen session
 	screen
 
@@ -239,5 +242,6 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 
 # Kill a screen session
 	screen -X -S session_name quit
+```
 ```
 
