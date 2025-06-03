@@ -6,11 +6,11 @@
 #SBATCH --error=%x_%j.err
 
 
-# Load any required modules (uncomment if needed)
+# Activate conda env
 source ~/.bashrc  
 conda activate dds
 
-# Set input directory (change this to your target directory)
+# Set input directory
 INPUT_DIR=""
 
 # Set output filename
