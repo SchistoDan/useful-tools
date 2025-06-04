@@ -156,6 +156,35 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 ```
 
 
+## extract_best_barcode.py
+Extract the 'best' barcode consensus sequences from a fasta_compare CSV output and corresponding FASTA files. Written for BGE.
+1. Filters fasta_compare CSV rows where 'best_sequence' = 'yes'
+2. Optionally merges statistics data from a BGEE summary statistics CSV file
+3. Extracts corresponding sequences from source FASTA files
+4. Copies corresponding alignment FASTA files from mode-specific directories
+5. Copies fastp-generated JSON files from subdirectories to a flattened structure
+6. Outputs curated CSV file, extracted FASTA sequence file, compressed alignment FASTA files and JSON files, and a script log
+
+ ```bash
+ python extract_best_barcodes.py -i input.csv -o best_barcodes/ -f best_barcodes.fasta -a alignment_file/parent/directory -c BGEE_summary_stats.csv -j json_file/parent/directory
+
+input:
+   -i/--input: Input fasta_compare CSV file output
+   -o/--out: Output directory for all generated files
+   -f/--fasta: Output FASTA filename containing the 'best' sequences
+   -a/--align: Parent directory containing mode-specific alignment subdirectories (optional)
+   -c/--csv: BGEE summary stats CSV file to merge with fasta_compare CSV file output (optional)
+   -j/--json: Parent directory containing subdirectories with JSON files (optional)
+
+output:
+   - {input_name}-best.csv: Filtered CSV with optional stats columns
+   - {fasta_name}: Extracted sequences in FASTA format
+   - alignment_files.tar.gz: Compressed alignment files (if -a provided)
+   - fastp_json.tar.gz: Compressed JSON files (if -j provided)
+   - {fasta_stem}.log: Complete operation log
+```
+
+
 
 # useful-commands
 
@@ -242,6 +271,5 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 
 # Kill a screen session
 	screen -X -S session_name quit
-```
 ```
 
