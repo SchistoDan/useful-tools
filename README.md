@@ -185,6 +185,28 @@ output:
 ```
 
 
+## Remove Trailing Whitespace from a specified column in a CSV file
+- Replace COLUMN_NAME with your column of interest, and replace input and output csv filenames.
+```
+python3 -c "
+import csv, sys
+reader = csv.DictReader(sys.stdin)
+writer = csv.DictWriter(sys.stdout, reader.fieldnames)
+writer.writeheader()
+total_removed = 0
+rows_modified = 0
+for row in reader:
+    original = row['COLUMN_NAME']
+    trimmed = original.rstrip()
+    removed = len(original) - len(trimmed)
+    if removed > 0:
+        total_removed += removed
+        rows_modified += 1
+    row['COLUMN_NAME'] = trimmed
+    writer.writerow(row)
+print(f'Removed {total_removed} trailing whitespace characters from {rows_modified} rows', file=sys.stderr)
+" < input.csv > output.csv
+```
 
 # useful-commands
 
