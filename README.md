@@ -33,7 +33,8 @@ OUTPUT_DIR - Directory where the modified FASTA files will be saved. Defaults to
 
 
 
-## blast.sh
+## BLASTn search
+### blast.sh
 Runs BLASTn on a directory of FASTA files or a single multi-FASTA file, where output files are named according to sequence headers in the FASTA file. The script can skip processing an input FASTA file or sequence if the output file already exists. Inputs, outputs and parameters must be changed in the script (i.e. they are hard-coded).
  ```bash
 sbatch/srun blast.sh
@@ -46,6 +47,26 @@ input:
 
 output:
 - Path to output directory where BLAST results will be saved
+```
+### ena-blast.sh
+- Runs BLASTn on an input multi-fasta file by submitting sequences (in batches of 30 (maximum allowed)) via HTTP requests to EBI's remote servers, thereby outsourcing resources to EBI's side. Outputs a aingle TSV file per sequence in the multi-fasta.
+- Clone [EBI's web services/api repo](https://github.com/ebi-jdispatcher/webservice-clients/tree/master), and run:
+```
+python ./python/ncbiblast.py \
+  --multifasta \
+  --email $EMAIL \
+  --program blastn \
+  --stype dna \
+  --database em_all \
+  --sequence $INPUT \
+  --maxJobs 30 \
+  --useSeqId \
+  --exp 1e-5 \
+  --outformat tsv \
+  --verbose
+
+# em_all = All nucleotide sequences on ENA.
+# --exp = E-value threshold (default 10)
 ```
 
 
