@@ -18,22 +18,10 @@ output:
 
 
 
-## add_sequences.py
-Add sequences from one FASTA file to multiple other FASTA files, such as might be necessary when adding several possible contaminant sequences into a FASTA file containing a reference sequence. The script reads all FASTA files in the specified target directory, appends sequences from a specified additions file to each of them, and saves the modified FASTA files to the specified output directory.
- ```bash
-python add_sequences.py --target_dir [TARGET_DIR] --additions_file [ADDITIONS_FILE] [--output_dir OUTPUT_DIR]
-
-input:
-- TARGET_DIR - Directory containing the target FASTA files to which sequences will be added.
-- ADDITIONS_FILE - Path to the FASTA file containing the sequences to be added to each target FASTA file.
-
-output:
-OUTPUT_DIR - Directory where the modified FASTA files will be saved. Defaults to 'output' if not provided.
-```
 
 
 
-## BLASTn search
+## BLASTn searching
 ### blast.sh
 Runs BLASTn on a directory of FASTA files or a single multi-FASTA file, where output files are named according to sequence headers in the FASTA file. The script can skip processing an input FASTA file or sequence if the output file already exists. Inputs, outputs and parameters must be changed in the script (i.e. they are hard-coded).
  ```bash
@@ -86,8 +74,8 @@ output:
 
 
 
-
-## csv_combiner.py
+## CSV manipulation
+### csv_combiner.py
 Combine multiple CSV files into a single file, preserving header structure from first input file (subsequent input file columns will be reordered to align with the first input files header order).
 
  ```bash
@@ -99,11 +87,47 @@ input:
 output:
 - CSV file path 
 ```
+### csv_splitter.py
+Splits a CSV file into multiple smaller CSV files with a specified number of rows per file. Each output file will contain the header row from the original CSV file followed by the specified number of data rows.
+If the input CSV has fewer rows than specified for the final chunk, all remaining rows will be included in the last output file.
+
+ ```bash
+python csv_splitter.py input_file rows_per_file
+
+input:
+- Path to the input CSV file to be split
+
+output:
+-  Number of rows each output file should contain (excluding header)
+```
+### Remove Trailing Whitespace from a specified column in a CSV file
+- Replace COLUMN_NAME with your column of interest, and replace input and output csv filenames.
+```
+python3 -c "
+import csv, sys
+reader = csv.DictReader(sys.stdin)
+writer = csv.DictWriter(sys.stdout, reader.fieldnames)
+writer.writeheader()
+total_removed = 0
+rows_modified = 0
+for row in reader:
+    original = row['COLUMN_NAME']
+    trimmed = original.rstrip()
+    removed = len(original) - len(trimmed)
+    if removed > 0:
+        total_removed += removed
+        rows_modified += 1
+    row['COLUMN_NAME'] = trimmed
+    writer.writerow(row)
+print(f'Removed {total_removed} trailing whitespace characters from {rows_modified} rows', file=sys.stderr)
+" < input.csv > output.csv
+```
 
 
 
 
-## fasta_length_stats.py
+## FASTA file processing
+### fasta_length_stats.py
 Calculate the number of sequences, minimum length, maximum length, and average length of sequences present within an input multi-fasta, and output these statistics to a text file.
 
  ```bash
@@ -123,26 +147,19 @@ Maximum length: 1105
 Maximum length sequence: >longest sequence header
 Average length: 188.94
 ```
-
-
-## csv_splitter.py
-Splits a CSV file into multiple smaller CSV files with a specified number of rows per file. Each output file will contain the header row from the original CSV file followed by the specified number of data rows.
-If the input CSV has fewer rows than specified for the final chunk, all remaining rows will be included in the last output file.
-
+### add_sequences.py
+Add sequences from one FASTA file to multiple other FASTA files, such as might be necessary when adding several possible contaminant sequences into a FASTA file containing a reference sequence. The script reads all FASTA files in the specified target directory, appends sequences from a specified additions file to each of them, and saves the modified FASTA files to the specified output directory.
  ```bash
-python csv_splitter.py input_file rows_per_file
+python add_sequences.py --target_dir [TARGET_DIR] --additions_file [ADDITIONS_FILE] [--output_dir OUTPUT_DIR]
 
 input:
-- Path to the input CSV file to be split
+- TARGET_DIR - Directory containing the target FASTA files to which sequences will be added.
+- ADDITIONS_FILE - Path to the FASTA file containing the sequences to be added to each target FASTA file.
 
 output:
--  Number of rows each output file should contain (excluding header)
+OUTPUT_DIR - Directory where the modified FASTA files will be saved. Defaults to 'output' if not provided.
 ```
-
-
-
-
-## fasta_extractor.py
+### fasta_extractor.py
 Extracts sequences from a multi-FASTA file based on a list of IDs. It creates a new FASTA file with the matched sequences and outputs a CSV log of which IDs were found and which weren't.
 
  ```bash
@@ -161,23 +178,7 @@ output:
        - "Not Found" column lists IDs that were not found
 
 ```
-
-
-
-
-## compress.sh
-Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
-
-```bash
-    sbatch compress.sh
-
- INPUT_DIR = Path to target directory to compress (set in script)
- OUTPUT_FILE = ${INPUT_DIR##*/}.tar.gz
-
-```
-
-
-## extract_best_barcode.py
+### extract_best_barcode.py
 Extract the 'best' barcode consensus sequences from a fasta_compare CSV output and corresponding FASTA files. Written for BGE.
 1. Filters fasta_compare CSV rows where 'best_sequence' = 'yes'
 2. Optionally merges statistics data from a BGEE summary statistics CSV file
@@ -206,28 +207,23 @@ output:
 ```
 
 
-## Remove Trailing Whitespace from a specified column in a CSV file
-- Replace COLUMN_NAME with your column of interest, and replace input and output csv filenames.
+
+## compress.sh
+Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
+
+```bash
+    sbatch compress.sh
+
+ INPUT_DIR = Path to target directory to compress (set in script)
+ OUTPUT_FILE = ${INPUT_DIR##*/}.tar.gz
+
 ```
-python3 -c "
-import csv, sys
-reader = csv.DictReader(sys.stdin)
-writer = csv.DictWriter(sys.stdout, reader.fieldnames)
-writer.writeheader()
-total_removed = 0
-rows_modified = 0
-for row in reader:
-    original = row['COLUMN_NAME']
-    trimmed = original.rstrip()
-    removed = len(original) - len(trimmed)
-    if removed > 0:
-        total_removed += removed
-        rows_modified += 1
-    row['COLUMN_NAME'] = trimmed
-    writer.writerow(row)
-print(f'Removed {total_removed} trailing whitespace characters from {rows_modified} rows', file=sys.stderr)
-" < input.csv > output.csv
-```
+
+
+
+
+
+
 
 # useful-commands
 
