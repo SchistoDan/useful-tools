@@ -2,7 +2,8 @@
 A collection of useful tools/scripts/commands, developed for a range of bioinformatics-related functions.
 
 
-## taxid_fetcher.py
+## Taxonomy resolvers
+### taxid_fetcher.py
 Fetches taxonomic ID (taxids) for N samples using taxonomic heirarchy information for each sample. Script looks for taxid at species-level before traversing up the taxonomic 'tree'.
 ```bash
 python taxid_fetcher.py <input_csv> <rankedlineage_path> <output_csv>
@@ -13,6 +14,18 @@ input:
 
 output:
 - CSV file with taxid, matched_rank (taxonomic rank taxid corresponds to), NCBI lineage for taxid, lineage_mismatch (yes=higher taxonomy of input taxonomic heirarchy does not match higher taxonomy of fetched lineage) appended.
+```
+## taxonomy_analyser.py
+Determines the number of unique taxa at each rank (phylum, class, order, family, genus, species), the number of unique families per class, and the number of unique families per order. Requires a list of Process IDs (no header), and a CSV file containing the same Process IDs and heirarchical taxonomy information (i.e. columns for phylum, class, order, family, genus, species).
+```bash
+python taxonomy_analyser.py -c <input_csv>.csv -p <process_id_list>.txt <output_stats>.txt
+
+input:
+- CSV file containing '[Process] ID', 'phylum', 'class', 'order', 'family', 'genus', and 'species' fields (i.e. taxonomic hierarchy).
+- TXT file containing list of Process IDs to search for in CSV file.
+
+output:
+- TXT file with taxonomy information
 ```
 
 
