@@ -72,6 +72,8 @@ python ./python/ncbiblast.py \
 
 
 
+
+## File manipulation
 ## filer_mover.py
 Moves files containing user-specified string in the filename in one directory to another.
  ```bash
@@ -84,6 +86,19 @@ input:
 output:
 - Directory to move specified files to
 ```
+
+## compress.sh
+Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
+
+```bash
+    sbatch compress.sh
+
+ INPUT_DIR = Path to target directory to compress (set in script)
+ OUTPUT_FILE = ${INPUT_DIR##*/}.tar.gz
+
+```
+
+
 
 
 
@@ -221,16 +236,18 @@ output:
 
 
 
-## compress.sh
-Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
+### Parse Fastp read QC statistics
+## parse_fastp_stats.py
+Parse Fastp read QC metrics from JSON files output by Fastp into a snigle CSV file.
 
-```bash
-    sbatch compress.sh
+ ```bash
+ python parse_fastp_stats.py -i path_1/trimmed_data/ path_2/trimmed_data/ path_3/trimmed_data/ -o output.csv
 
- INPUT_DIR = Path to target directory to compress (set in script)
- OUTPUT_FILE = ${INPUT_DIR##*/}.tar.gz
+input:
+   -i: Path to at least one 'trimmed_data' directory, each containing sample-specific subdirectories with a fastp JSON file in each subdirectory.
 
-```
+output:
+   -o: Path to output CSV file
 
 
 
