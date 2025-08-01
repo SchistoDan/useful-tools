@@ -49,6 +49,17 @@ input:
 output:
 - Path to output directory where BLAST results will be saved
 ```
+### parse_blast_results.py
+Parses the BLAST TSV resutls genreated by `blast.sh` into a combined CSV file. Organised the CSV file as follows for the first 5 hits:
+sequence_name | hit1_description | hit1_identity_percent | hit1_family | hit2_description | hit2_identity_percent | hit2_family
+
+```
+python parse_blast_results.py <input_dir> ./output.csv
+
+input_dir = Directory containing BLAST output TSV files produced by blast.sh (flat structure)
+output.csv = Combined BLASt results file for each processed TSV file
+
+```
 ### ena-blast.sh
 - Runs BLASTn on an input multi-fasta file by submitting sequences (in batches of 30 (maximum allowed)) via HTTP requests to EBI's remote servers, thereby outsourcing resources to EBI's side. Outputs a aingle TSV file per sequence in the multi-fasta.
 - Clone [EBI's web services/api repo](https://github.com/ebi-jdispatcher/webservice-clients/tree/master), and run:
