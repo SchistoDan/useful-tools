@@ -1,27 +1,19 @@
 #!/usr/bin/env python3
 """
-Parse BLAST TSV results from multiple files into a single CSV with family names.
+Parse BLAST results from multiple file formats into a single CSV with family names.
 
-This script:
-1. Parses TSV format files (.tsv, .txt, or .out extensions) from BLAST results
-2. Extracts top 5 hits per sequence
-3. Queries ENA taxonomy API to get family names
-4. Outputs CSV with sequence name, hit descriptions, identity percentages, and families
+This script supports two BLAST result formats:
+1. Custom TSV format (columns: ..., description, ..., identity_percent, ...)
+2. Standard BLAST TSV format (outfmt 6 with stitle)
 
-Family Name Extraction:
-- ENA's API returns taxonomic lineage as names only (no rank labels)
-- Family identification uses established taxonomic nomenclature conventions:
-  * Zoological families typically end in '-idae' (e.g., Canidae, Chordeumatidae)
-  * Botanical families typically end in '-aceae' (e.g., Rosaceae, Asteraceae)
-  * Positional inference when naming conventions don't apply
+Features:
+- Parses multiple file extensions (.tsv, .tsv.tsv, .txt, .out)
+- Auto-detects format based on file content
+- Extracts top 5 hits per sequence
+- Queries ENA taxonomy API to get family names
+- Outputs unified CSV format
 
-Usage: python parse_blast_results.py <input_directory> [output.csv]
-
-Note: Requires internet connection for ENA taxonomy API calls.
-Accepts files with .tsv, .txt, or .out extensions (all must be in TSV format).
-
-BLAST TSV Format Expected:
-qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle
+Usage: python integrated_blast_parser.py <input_directory> [output.csv]
 """
 
 import os
@@ -38,14 +30,7 @@ from pathlib import Path
 TAXONOMY_CACHE = {}
 
 def get_family_from_ena(species_name):
-    """
-    Query ENA taxonomy API to get family name for a species.
-    
-    Note: ENA's API returns lineage as names only (no ranks), so we use
-    established taxonomic nomenclature conventions to identify the family.
-    
-    Returns family name or empty string if not found.
-    """
+    """Query ENA taxonomy API to get family name for a species."""
     if not species_name or species_name in TAXONOMY_CACHE:
         return TAXONOMY_CACHE.get(species_name, "")
     
@@ -89,28 +74,14 @@ def get_family_from_ena(species_name):
     return ""
 
 def extract_family_from_lineage(lineage):
-    """
-    Extract family name from ENA lineage string using nomenclature conventions.
-    
-    ENA only provides lineage names without ranks, so we use established 
-    taxonomic naming conventions:
-    - Zoological families typically end in '-idae'
-    - Botanical families typically end in '-aceae'  
-    - Family usually appears before genus in lineage
-    """
+    """Extract family name from ENA lineage string using nomenclature conventions."""
     if not lineage:
         return ""
     
     taxa = [taxon.strip() for taxon in lineage.split(';') if taxon.strip()]
     
     # Standard family name endings by nomenclature code
-    family_endings = [
-        'idae',    # Zoological families (e.g., Canidae, Chordeumatidae)
-        'aceae',   # Botanical families (e.g., Rosaceae, Asteraceae) 
-        'inae',    # Some subfamilies, but sometimes used for families
-        'oidae',   # Some zoological superfamilies, but sometimes families
-        'ales',    # Sometimes used for family-level groups
-    ]
+    family_endings = ['idae', 'aceae', 'inae', 'oidae', 'ales']
     
     # Method 1: Look for taxa with standard family endings
     for taxon in taxa:
@@ -119,9 +90,7 @@ def extract_family_from_lineage(lineage):
                 return taxon
     
     # Method 2: Positional approach - family typically comes before genus
-    # In standard lineage: ...Kingdom; Phylum; Class; Order; Family; Genus;
     if len(taxa) >= 2:
-        # Skip very high-level taxa that are clearly not families
         high_level_taxa = {
             'eukaryota', 'metazoa', 'chordata', 'craniata', 'vertebrata', 
             'euteleostomi', 'mammalia', 'aves', 'reptilia', 'amphibia',
@@ -130,22 +99,54 @@ def extract_family_from_lineage(lineage):
         }
         
         # Look for potential family 1-3 positions before genus (last taxon)
-        for i in range(2, min(5, len(taxa))):  # Check positions -2, -3, -4
+        for i in range(2, min(5, len(taxa))):
             potential_family = taxa[-i]
             if potential_family.lower() not in high_level_taxa:
                 return potential_family
     
     return ""
 
+# Functions from Script 1 (Custom TSV format)
+def shorten_description(description):
+    """Shorten description by keeping only the part before 'voucher' or 'isolate'."""
+    desc_lower = description.lower()
+    
+    # Find the position of various terms
+    terms = [' voucher', ' isolate', ' strain']
+    cut_positions = [desc_lower.find(term) for term in terms if desc_lower.find(term) != -1]
+    
+    if cut_positions:
+        cut_pos = min(cut_positions)
+        shortened = description[:cut_pos].strip()
+    else:
+        # Try gene patterns
+        gene_patterns = [' gene', ' cytochrome', ' COI', ' COX1', ' 16S', ' 18S']
+        gene_positions = [desc_lower.find(pattern) for pattern in gene_patterns if desc_lower.find(pattern) != -1]
+        
+        if gene_positions:
+            cut_pos = min(gene_positions)
+            shortened = description[:cut_pos].strip()
+        else:
+            shortened = description.strip()
+    
+    return shortened
+
+def extract_species_name(description):
+    """Extract species name from description (first two words)."""
+    if not description:
+        return ""
+    
+    words = description.strip().split()
+    if len(words) >= 2:
+        return f"{words[0]} {words[1]}"
+    elif len(words) == 1:
+        return words[0]
+    
+    return ""
+
+# Functions from Script 2 (BLAST TSV format)
 def extract_species_from_stitle(stitle):
-    """
-    Extract species name from BLAST stitle field.
-    
-    The stitle field contains taxonomic information in a special format like:
-    'KU893267.1.<1.>629###root_1;Eukaryota_2759;...;Cocalus_menglaensis_1813799'
-    
-    Extract the species name from the end of the taxonomic path.
-    """
+    """Extract species name from BLAST stitle field."""
     if not stitle:
         return ""
     
@@ -153,21 +154,15 @@ def extract_species_from_stitle(stitle):
         # Split by '###' to separate accession from taxonomy
         if '###' in stitle:
             taxonomy_part = stitle.split('###')[1]
-            
-            # Split by ';' to get taxonomic levels
             taxa = taxonomy_part.split(';')
             
-            # The last taxon should be the species (genus_species_taxid format)
             if taxa:
                 last_taxon = taxa[-1]
-                # Remove the taxid suffix (e.g., '_1813799')
                 species_with_taxid = last_taxon.split('_')
                 if len(species_with_taxid) >= 2:
-                    # Reconstruct genus species, removing the numeric taxid at the end
-                    # Handle cases like 'Cocalus_menglaensis_1813799' -> 'Cocalus menglaensis'
                     species_parts = []
                     for part in species_with_taxid:
-                        if part.isdigit():  # Skip numeric taxid
+                        if part.isdigit():
                             break
                         species_parts.append(part)
                     
@@ -176,10 +171,9 @@ def extract_species_from_stitle(stitle):
                     elif len(species_parts) == 1:
                         return species_parts[0]
         
-        # Fallback: try to extract first two words from the beginning of stitle
+        # Fallback: try to extract first two words
         words = stitle.split()
         if len(words) >= 2:
-            # Check if first two words look like genus species
             if words[0][0].isupper() and words[1][0].islower():
                 return f"{words[0]} {words[1]}"
     
@@ -189,30 +183,22 @@ def extract_species_from_stitle(stitle):
     return ""
 
 def shorten_stitle(stitle):
-    """
-    Shorten the BLAST stitle field to make it more readable.
-    Extract the species name from the taxonomic information.
-    """
+    """Shorten the BLAST stitle field to make it more readable."""
     if not stitle:
         return ""
     
     try:
-        # Split by '###' to separate accession from taxonomy
         if '###' in stitle:
             taxonomy_part = stitle.split('###')[1]
-            
-            # Split by ';' to get taxonomic levels
             taxa = taxonomy_part.split(';')
             
-            # The last taxon should be the species
             if taxa:
                 last_taxon = taxa[-1]
-                # Remove the taxid suffix and convert underscores to spaces
                 species_with_taxid = last_taxon.split('_')
                 if len(species_with_taxid) >= 2:
                     species_parts = []
                     for part in species_with_taxid:
-                        if part.isdigit():  # Skip numeric taxid
+                        if part.isdigit():
                             break
                         species_parts.append(part)
                     
@@ -231,62 +217,112 @@ def shorten_stitle(stitle):
         print(f"Warning: Could not shorten stitle '{stitle}': {e}", file=sys.stderr)
         return stitle
 
-def parse_blast_output(filepath):
+def detect_format(filepath):
     """
-    Parse a single TSV format file and extract top 5 hits.
-    Returns tuple: (sequence_name, hits_data)
-    
-    Expected BLAST TSV format:
-    qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle
+    Detect whether file is custom TSV format or standard BLAST TSV format.
+    Returns 'custom' or 'blast'.
     """
-    # Extract sequence name from filename (remove file extension)
-    sequence_name = Path(filepath).stem  # This removes any extension automatically
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            first_line = f.readline().strip()
+            if not first_line:
+                return 'blast'  # Default to blast format
+            
+            # Check if first line looks like a header
+            if any(keyword in first_line.lower() for keyword in ['query', 'subject', 'identity', 'description']):
+                return 'custom'
+            
+            # Check column count
+            columns = first_line.split('\t')
+            
+            # Standard BLAST format has 12-13 columns, check for stitle format
+            if len(columns) >= 12:
+                # Look for BLAST stitle format in what should be the stitle column
+                potential_stitle = columns[-1] if len(columns) == 13 else columns[12] if len(columns) > 12 else ""
+                if '###' in potential_stitle or 'root_' in potential_stitle:
+                    return 'blast'
+            
+            # If it has fewer columns or doesn't match BLAST format, assume custom
+            return 'custom'
+            
+    except Exception as e:
+        print(f"Warning: Could not detect format for {filepath}: {e}", file=sys.stderr)
+        return 'blast'  # Default to blast format
+
+def parse_custom_tsv(filepath):
+    """Parse custom TSV format (Script 1 style)."""
+    sequence_name = Path(filepath).name
+    if sequence_name.endswith('.tsv.tsv'):
+        sequence_name = sequence_name[:-8]
+    elif sequence_name.endswith('.tsv'):
+        sequence_name = sequence_name[:-4]
     
     hits_data = []
     
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
-            # Process data lines (no header to skip)
+            # Skip header line
+            next(f)
+            
             for i, line in enumerate(f):
-                if i >= 5:  # Only take top 5 hits
+                if i >= 5:
                     break
                     
                 columns = line.strip().split('\t')
-                if len(columns) >= 13:  # Ensure we have all expected columns
-                    # Extract relevant columns based on BLAST TSV format
+                if len(columns) >= 8:
+                    full_description = columns[3]  # Description column
+                    identity_pct = columns[7]      # Identities(%) column
+                    
+                    description = shorten_description(full_description)
+                    species_name = extract_species_name(description)
+                    family = get_family_from_ena(species_name)
+                    
+                    hits_data.append((description, identity_pct, family))
+                    time.sleep(0.1)
+                    
+    except Exception as e:
+        print(f"Warning: Could not parse {filepath}: {e}", file=sys.stderr)
+    
+    return sequence_name, hits_data
+
+def parse_blast_tsv(filepath):
+    """Parse standard BLAST TSV format (Script 2 style)."""
+    sequence_name = Path(filepath).stem
+    hits_data = []
+    
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            for i, line in enumerate(f):
+                if i >= 5:
+                    break
+                    
+                columns = line.strip().split('\t')
+                if len(columns) >= 13:
                     pident = columns[2]      # Percent identity
-                    stitle = columns[12]     # Subject title (description)
+                    stitle = columns[12]     # Subject title
                     
-                    # Shorten description for readability
                     description = shorten_stitle(stitle)
-                    
-                    # Extract species name for family lookup
                     species_name = extract_species_from_stitle(stitle)
                     family = get_family_from_ena(species_name) if species_name else ""
                     
                     hits_data.append((description, pident, family))
                     
-                    # Small delay to be respectful to ENA API
-                    if species_name:  # Only sleep if we made an API call
+                    if species_name:
                         time.sleep(0.1)
                 else:
                     print(f"Warning: Line {i+1} in {filepath} has only {len(columns)} columns, expected 13", file=sys.stderr)
                     
     except Exception as e:
         print(f"Warning: Could not parse {filepath}: {e}", file=sys.stderr)
-        return sequence_name, []
     
     return sequence_name, hits_data
 
-def find_blast_files(input_dir):
-    """
-    Find all BLAST result files with supported extensions (.tsv, .txt, .out).
-    Returns list of file paths.
-    """
-    supported_extensions = ['*.tsv', '*.txt', '*.out']
+def find_supported_files(input_dir):
+    """Find all supported file extensions."""
+    extensions = ['*.tsv', '*.tsv.tsv', '*.txt', '*.out']
     all_files = []
     
-    for extension in supported_extensions:
+    for extension in extensions:
         pattern = os.path.join(input_dir, extension)
         files = glob.glob(pattern)
         all_files.extend(files)
@@ -295,8 +331,9 @@ def find_blast_files(input_dir):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python parse_blast_results.py <input_directory> [output.csv]")
-        print("Supports files with .tsv, .txt, or .out extensions (all must be in TSV format)")
+        print("Usage: python integrated_blast_parser.py <input_directory> [output.csv]")
+        print("Supports: .tsv, .tsv.tsv, .txt, .out files")
+        print("Auto-detects custom TSV vs standard BLAST TSV format")
         sys.exit(1)
     
     input_dir = sys.argv[1]
@@ -306,32 +343,37 @@ def main():
         print(f"Error: {input_dir} is not a valid directory")
         sys.exit(1)
     
-    # Find all supported BLAST result files
-    blast_files = find_blast_files(input_dir)
+    # Find all supported files
+    files = find_supported_files(input_dir)
     
-    if not blast_files:
-        print(f"No supported files (.tsv, .txt, .out) found in {input_dir}")
+    if not files:
+        print(f"No supported files found in {input_dir}")
         sys.exit(1)
     
-    print(f"Found {len(blast_files)} BLAST result files")
-    print("Supported extensions: .tsv, .txt, .out")
-    print("Starting family name lookups via ENA taxonomy API...")
+    print(f"Found {len(files)} files")
+    print("Auto-detecting file formats and starting family name lookups...")
     
     # Prepare CSV headers
-    headers = ['sequence_name']
-    for i in range(1, 6):  # Hit 1 through Hit 5
+    headers = ['sequence_name', 'detected_format']
+    for i in range(1, 6):
         headers.extend([f'hit{i}_description', f'hit{i}_identity_percent', f'hit{i}_family'])
     
-    # Process all files and write CSV
+    # Process all files
     with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(headers)
         
-        for blast_file in sorted(blast_files):
-            sequence_name, hits_data = parse_blast_output(blast_file)
+        for filepath in sorted(files):
+            # Detect format and parse accordingly
+            format_type = detect_format(filepath)
+            
+            if format_type == 'custom':
+                sequence_name, hits_data = parse_custom_tsv(filepath)
+            else:
+                sequence_name, hits_data = parse_blast_tsv(filepath)
             
             # Build row data
-            row = [sequence_name]
+            row = [sequence_name, format_type]
             
             # Add hit data (up to 5 hits)
             for i in range(5):
@@ -339,17 +381,14 @@ def main():
                     description, identity_pct, family = hits_data[i]
                     row.extend([description, identity_pct, family])
                 else:
-                    # Fill empty hits with blank values
                     row.extend(['', '', ''])
             
             writer.writerow(row)
-            print(f"Processed: {sequence_name}")
-            
-            # Brief pause between files to be respectful to ENA API
+            print(f"Processed: {sequence_name} (format: {format_type})")
             time.sleep(0.5)
     
     print(f"\nResults written to: {output_file}")
-    print(f"Processed {len(blast_files)} sequences")
+    print(f"Processed {len(files)} files")
     print(f"Cached {len(TAXONOMY_CACHE)} taxonomic lookups")
 
 if __name__ == "__main__":
