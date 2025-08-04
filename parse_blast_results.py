@@ -3,7 +3,7 @@
 Parse BLAST TSV results from multiple files into a single CSV with family names.
 
 This script:
-1. Parses TSV files from BLAST results
+1. Parses TSV format files (.tsv, .txt, or .out extensions) from BLAST results
 2. Extracts top 5 hits per sequence
 3. Queries ENA taxonomy API to get family names
 4. Outputs CSV with sequence name, hit descriptions, identity percentages, and families
@@ -18,6 +18,7 @@ Family Name Extraction:
 Usage: python parse_blast_results.py <input_directory> [output.csv]
 
 Note: Requires internet connection for ENA taxonomy API calls.
+Accepts files with .tsv, .txt, or .out extensions (all must be in TSV format).
 
 BLAST TSV Format Expected:
 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle
@@ -230,18 +231,16 @@ def shorten_stitle(stitle):
         print(f"Warning: Could not shorten stitle '{stitle}': {e}", file=sys.stderr)
         return stitle
 
-def parse_tsv_file(filepath):
+def parse_blast_output(filepath):
     """
-    Parse a single TSV file and extract top 5 hits.
+    Parse a single TSV format file and extract top 5 hits.
     Returns tuple: (sequence_name, hits_data)
     
     Expected BLAST TSV format:
     qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore stitle
     """
-    # Extract sequence name from filename (remove .tsv extension)
-    sequence_name = Path(filepath).name
-    if sequence_name.endswith('.tsv'):
-        sequence_name = sequence_name[:-4]
+    # Extract sequence name from filename (remove file extension)
+    sequence_name = Path(filepath).stem  # This removes any extension automatically
     
     hits_data = []
     
@@ -279,9 +278,25 @@ def parse_tsv_file(filepath):
     
     return sequence_name, hits_data
 
+def find_blast_files(input_dir):
+    """
+    Find all BLAST result files with supported extensions (.tsv, .txt, .out).
+    Returns list of file paths.
+    """
+    supported_extensions = ['*.tsv', '*.txt', '*.out']
+    all_files = []
+    
+    for extension in supported_extensions:
+        pattern = os.path.join(input_dir, extension)
+        files = glob.glob(pattern)
+        all_files.extend(files)
+    
+    return all_files
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: python parse_blast_results.py <input_directory> [output.csv]")
+        print("Supports files with .tsv, .txt, or .out extensions (all must be in TSV format)")
         sys.exit(1)
     
     input_dir = sys.argv[1]
@@ -291,15 +306,15 @@ def main():
         print(f"Error: {input_dir} is not a valid directory")
         sys.exit(1)
     
-    # Find all TSV files
-    tsv_pattern = os.path.join(input_dir, "*.tsv")
-    tsv_files = glob.glob(tsv_pattern)
+    # Find all supported BLAST result files
+    blast_files = find_blast_files(input_dir)
     
-    if not tsv_files:
-        print(f"No TSV files found in {input_dir}")
+    if not blast_files:
+        print(f"No supported files (.tsv, .txt, .out) found in {input_dir}")
         sys.exit(1)
     
-    print(f"Found {len(tsv_files)} TSV files")
+    print(f"Found {len(blast_files)} BLAST result files")
+    print("Supported extensions: .tsv, .txt, .out")
     print("Starting family name lookups via ENA taxonomy API...")
     
     # Prepare CSV headers
@@ -312,8 +327,8 @@ def main():
         writer = csv.writer(csvfile)
         writer.writerow(headers)
         
-        for tsv_file in sorted(tsv_files):
-            sequence_name, hits_data = parse_tsv_file(tsv_file)
+        for blast_file in sorted(blast_files):
+            sequence_name, hits_data = parse_blast_output(blast_file)
             
             # Build row data
             row = [sequence_name]
@@ -334,7 +349,7 @@ def main():
             time.sleep(0.5)
     
     print(f"\nResults written to: {output_file}")
-    print(f"Processed {len(tsv_files)} sequences")
+    print(f"Processed {len(blast_files)} sequences")
     print(f"Cached {len(TAXONOMY_CACHE)} taxonomic lookups")
 
 if __name__ == "__main__":
