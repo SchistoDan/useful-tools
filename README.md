@@ -54,7 +54,7 @@ Parses the BLAST results genreated by `blast.sh` into a combined CSV file. Organ
 sequence_name | hit1_description | hit1_identity_percent | hit1_family | hit2_description | hit2_identity_percent | hit2_family
 
 ```
-python parse_blast_results.py <input_dir> ./output.csv
+python parse_ncbiblast_results.py <input_dir> ./output.csv
 
 input_dir = Directory containing BLAST output .TSV/.TXT/.OUT files produced by blast.sh (flat structure)
 output.csv = Combined BLASt results file for each processed TSV file
@@ -78,9 +78,20 @@ python ./python/ncbiblast.py \
   --verbose
 
 # em_all = All nucleotide sequences on ENA.
+# em_inv = Invert nucleotide sequences on ENA.
 # --exp = E-value threshold (default 10)
 ```
+### parse_enablast_results.py
+Parses the BLAST results genreated by `ena-blast.sh` into a combined CSV file. Organised the CSV file as follows for the first 5 hits:
+sequence_name | hit1_description | hit1_identity_percent | hit1_family | hit2_description | hit2_identity_percent | hit2_family
 
+```
+python parse_enablast_results.py <input_dir> ./output.csv
+
+input_dir = Directory containing BLAST output .TSV files produced by ena-blast.sh (flat structure)
+output.csv = Combined BLASt results file for each processed TSV file
+
+```
 
 
 ## File manipulation
