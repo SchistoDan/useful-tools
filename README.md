@@ -112,18 +112,20 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 
 
 
-## CSV manipulation
-### csv_combiner.py
-Combine multiple CSV files into a single file, preserving header structure from first input file (subsequent input file columns will be reordered to align with the first input files header order).
+## CSV/TSV manipulation
+### merge_c-tsv_files.py
+Combine multiple CSV/TSV files into a single file, preserving header structure from first input file (subsequent input file columns will be reordered to align with the first input files header order).
 
  ```bash
-python csv_combiner.py -i <input1.csv> <input2.csv> <input3.csv> <etc> -o <output.csv>  
+python merge_c-tsv_files.py --input file1.csv file2.csv file3.csv --output merged.csv
+python merge_c-tsv_files.py --input data/*.csv --output combined.csv
+python merge_c-tsv_files.py --input data/*.tsv --output output.tsv
 
 input:
-- CSV files to combine
+- CSV or TSV files to combine
 
 output:
-- CSV file path 
+- CSV or TSV file path(s)
 ```
 ### csv_splitter.py
 Splits a CSV file into multiple smaller CSV files with a specified number of rows per file. Each output file will contain the header row from the original CSV file followed by the specified number of data rows.
