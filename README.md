@@ -268,13 +268,26 @@ awk '
 
 ### Parse Fastp read QC statistics
 ## parse_fastp_stats.py
-Parse Fastp read QC metrics from JSON files output by Fastp into a snigle CSV file.
+Parse Fastp read QC metrics from JSON files output by Fastp into a single CSV file.
 
  ```bash
  python parse_fastp_stats.py -i path_1/trimmed_data/ path_2/trimmed_data/ path_3/trimmed_data/ -o output.csv
 
 input:
    -i: Path to at least one 'trimmed_data' directory, each containing sample-specific subdirectories with a fastp JSON file in each subdirectory.
+
+output:
+   -o: Path to output CSV file
+```
+
+## extract_read_counts.py
+Parse just R1, R2, and total raw read counts from Fastp JSON files into a single CSV file.
+
+ ```bash
+ python extract_read_counts.py -i path_1/trimmed_data/ -o output.csv
+
+input:
+   -i: Path to a directory containg >1 Fastp JSON files (flat structure) or >1 sub-directories containing >1 Fastp JSON file each.
 
 output:
    -o: Path to output CSV file
