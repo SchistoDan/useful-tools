@@ -245,6 +245,24 @@ output:
    - fastp_json.tar.gz: Compressed JSON files (if -j provided)
    - {fasta_stem}.log: Complete operation log
 ```
+### Determine number of valid (not empty) sequences in multi-FASTA file
+Extracts sequences from a multi-FASTA file if they are not empty.
+```
+awk '
+  /^>/ {                     # header line
+    if (seqlen > 0) c++;     # finished a non-empty record
+    seqlen = 0;              # reset length for next record
+    next
+  }
+  { gsub(/[ \t\r\n]/, "");   # remove whitespace
+    seqlen += length         # accumulate sequence length
+  }
+  END {
+    if (seqlen > 0) c++;     # last record
+    print c
+  }
+' [path/to/your.fasta]
+```
 
 
 
