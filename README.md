@@ -263,9 +263,11 @@ awk '
   }
 ' [path/to/your.fasta]
 ```
-### Remove specified sequences from a multi-FASTA using a list of FASTA sequence headers
-Extracts sequences from a multi-FASTA file.
+### fasta_filter.py
+Remove specified sequences from a multi-FASTA using a list of FASTA sequence headers
 ```
+python fasta_filter.py input_fasta headers_file -k keep.fasta -r remove.fasta
+
 Requires:
 input_fasta: A multi-FASTA file with sequences to remove
 headers_file: A txt file with 1 FASTA sequence header per line to find and remove in the input_fasta
