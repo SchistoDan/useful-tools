@@ -263,6 +263,15 @@ awk '
   }
 ' [path/to/your.fasta]
 ```
+### Remove specified sequences from a multi-FASTA using a list of FASTA sequence headers
+Extracts sequences from a multi-FASTA file.
+```
+Requires:
+input_fasta: A multi-FASTA file with sequences to remove
+headers_file: A txt file with 1 FASTA sequence header per line to find and remove in the input_fasta
+-k/--keep: A multi-FASTA file = input_fasta - headers (and corresponding sequences) in headers_file
+-r/--remove: A multi-FASTA file containing sequences removed from input_fasta
+```
 
 
 
