@@ -274,6 +274,24 @@ headers_file: A txt file with 1 FASTA sequence header per line to find and remov
 -k/--keep: A multi-FASTA file = input_fasta - headers (and corresponding sequences) in headers_file
 -r/--remove: A multi-FASTA file containing sequences removed from input_fasta
 ```
+### compare_fasta.py
+```
+This script takes two FASTA files as input, extracts and compares their headers,
+then outputs a filtered list based on the specified filtering criteria.
+
+Usage:
+    python compare_fasta.py -i file1.fasta file2.fasta -o output.txt --filter keep
+    python compare_fasta.py -i file1.fasta file2.fasta -o output.txt --filter remove
+
+Filter modes:
+    - keep: Output headers that ARE present in both files (intersection)
+    - remove: Output headers that are NOT in both files (present in only one file)
+
+Output format:
+    - One header per line in a .txt file
+    - Headers are written without the '>' character
+    - Results are sorted alphabetically for consistency
+```
 
 
 
