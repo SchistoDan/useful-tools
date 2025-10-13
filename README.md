@@ -308,7 +308,20 @@ Output format:
 
 
 
-### Parse Fastp read QC statistics
+### Run Fatsp, and parse Fastp read QC statistics
+## fastp_run.sh
+Run fastp on a flat or nested directory structure of fastq.gz or fq.gz raw PE read files.
+```
+ Usage: sbatch fastp_run.sh <input> <output_directory> [threads]
+ 
+ <input> can be either:
+   - A text file listing directories (one per line)
+   - A directory containing FASTQ files
+
+Example 1: ./fastp_run.sh dir_list.txt /path/to/output 16
+Example 2: ./fastp_run.sh /path/to/fastq_files /path/to/output 16
+```
+
 ## parse_fastp_stats.py
 Parse Fastp read QC metrics from JSON files output by Fastp into a single CSV file.
 
