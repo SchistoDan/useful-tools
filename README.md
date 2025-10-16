@@ -36,15 +36,16 @@ output:
 
 ## BLASTn searching
 ### blast.sh
-Runs BLASTn on a directory of FASTA files or a single multi-FASTA file, where output files are named according to sequence headers in the FASTA file. The script can skip processing an input FASTA file or sequence if the output file already exists. Inputs, outputs and parameters must be changed in the script (i.e. they are hard-coded).
+Runs BLASTn on a directory of FASTA files or a single multi-FASTA file, where output files are named according to sequence headers in the FASTA file. The script can skip processing an input FASTA file or sequence if the output file already exists. Inputs, outputs and parameters must be changed within the script.
  ```bash
 sbatch/srun blast.sh
 
 input:
 - Path to FASTA file/multi-FASTA file/directory containing N FASTA files.
-- Path to the NCBI database directory
+- Path to the NCBI database directory (or FASTA file to create BLAST db from)
+- Name of created BLAST db (if FASTA given)
 - Name of the BLAST database to use (without file extensions), e.g. nt, nr
-- Additional BLAST options, e.g. - BLAST_OPTIONS="-evalue 5e-2 -max_target_seqs 50 -num_threads 36"
+- Additional BLAST options, e.g. - BLAST_OPTIONS="-evalue 1e-5 -max_target_seqs 50 -num_threads 16"
 
 output:
 - Path to output directory where BLAST results will be saved
