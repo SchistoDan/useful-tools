@@ -27,7 +27,18 @@ input:
 output:
 - TXT file with taxonomy information
 ```
+## taxonomy_splitter.py
+This script takes a CSV file containing specimen information with NCBI taxonomic IDs and splits it into multiple files based on the phylum of each specimen.
+For each taxid, the script queries the NCBI Taxonomy database to determine the phylum. It then creates separate output CSV files for each phylum found.
+```bash
+python taxonomy_splitter.py --input your_input_file.csv --email your.email@example.com
 
+input CSV:
+- ID,forward,reverse,taxid,type_status
+
+output CSV(s):
+- Named [input_file_name_without_ext]_[phylum].csv
+```
 
 
 
