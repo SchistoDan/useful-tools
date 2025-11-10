@@ -192,6 +192,11 @@ Output:
 
 
 ## FASTA file processing
+### mafft_aligner.sh
+A SLURM HPC-compatible bash script, submitted with sbatch, utilising the mafft aligner to create an MSA from an input multi-FASTA sequence. Requires mafft to be installed in an activated conda env.
+```
+sbatch mafft_align.sh <input.fasta> <threads>
+```
 ### fasta_length_stats.py
 Calculate the number of sequences, minimum length, maximum length, and average length of sequences present within an input multi-fasta, and output these statistics to a text file.
 
