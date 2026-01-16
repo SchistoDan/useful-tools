@@ -120,6 +120,20 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 
 ```
 
+## find_fastq.py
+Finds anc copies PE .fastq/.fastq.gz files containing user-specified string in the filename from one directory to another.
+ ```bash
+python find_fastq.py --search <input_directory> --in <list_of_strings> --out <output_directory>
+
+input:
+- Directory to search for files in
+- The string in the filename to search for (e.g. results, output, etc.)
+
+output:
+- Directory to move specified files to
+```
+
+
 
 
 
