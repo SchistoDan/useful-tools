@@ -188,18 +188,20 @@ for row in reader:
 print(f'Removed {total_removed} trailing whitespace characters from {rows_modified} rows', file=sys.stderr)
 " < input.csv > output.csv
 ```
-### filter_csv.py
-Filters CSV rows based on exact matches from a text file containing target values.
+### filter_spreadsheet.py
+Filters CSV/TSV/XLSX file rows based on exact matches from a text file containing target values.
 Script performs case-insensitive matching with robust whitespace and hidden character handling.
 ```
 Usage:
-    python filter_csv.py --csv <input_csv> --output <output_csv> --txt <filter_file> --filter <column_name>
+    python filter_spreadsheet.py --csv <input_csv> --output <output_csv> --txt <filter_file> --filter <column_name> [--skip-header]
 Input:
-    - CSV file with headers (any format)
+    - CSV/TSV/XLSX file with headers (any format)
     - Text file containing filter values (one per line)
     - Column name to filter on (e.g., "Process ID")
+    - Optional skip-header arg to skip any headers in the .txt file
+	
 Output:
-    - Filtered CSV file containing only rows where the specified column value matches 
+    - Filtered CSV/TSV/XLSX file containing only rows where the specified column value matches 
       (case-insensitive, whitespace-normalized) any value in the filter text file
 ```
 
