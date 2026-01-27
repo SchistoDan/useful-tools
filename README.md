@@ -39,7 +39,23 @@ input CSV:
 output CSV(s):
 - Named [input_file_name_without_ext]_[phylum].csv
 ```
+### merge_taxonomy.py
+Merge taxonomic data between File1 and File2 based on matching Process IDs.
+    1. Adds taxonomic data from File2 to File1 (Phylum, Class, Order, Family, Genus, Species)
+    2. Also adds metadata (taxid, matched_rank, lineage, lineage_mismatch) from File2 to File1
+    3. Adds metadata fields from File1 to File2 if File2 doesn't have these fields
+    
+If use_identification=True, the 'Identification' column from File2 is used to populate
+the 'species' column in File1, rather than requiring separate taxonomy columns.
+    
+Supports CSV, TSV, and XLSX files with auto-detection of delimiters.
+```
+python merge_taxonomy [FILE1] [FILE2] [OUTPUT_FILE]
 
+--encoding1 = Explicitly specify encoding for file1 (default: utf-8)
+--encoding2 = Explicitly specify encoding for file2 (default: utf-8)
+--use-identification = Use 'Identification' column from File2 to populate JUST the 'species' in File1 instead of requiring separate Phylum/Class/Order/Family/Genus/Species columns
+```
 
 
 
