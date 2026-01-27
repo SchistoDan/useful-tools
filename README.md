@@ -15,7 +15,7 @@ input:
 output:
 - CSV file with taxid, matched_rank (taxonomic rank taxid corresponds to), NCBI lineage for taxid, lineage_mismatch (yes=higher taxonomy of input taxonomic heirarchy does not match higher taxonomy of fetched lineage) appended.
 ```
-## taxonomy_analyser.py
+### taxonomy_analyser.py
 Determines the number of unique taxa at each rank (phylum, class, order, family, genus, species), the number of unique families per class, and the number of unique families per order. Requires a list of Process IDs (no header), and a CSV file containing the same Process IDs and heirarchical taxonomy information (i.e. columns for phylum, class, order, family, genus, species).
 ```bash
 python taxonomy_analyser.py -c <input_csv>.csv -p <process_id_list>.txt <output_stats>.txt
@@ -27,7 +27,7 @@ input:
 output:
 - TXT file with taxonomy information
 ```
-## taxonomy_splitter.py
+### taxonomy_splitter.py
 This script takes a CSV file containing specimen information with NCBI taxonomic IDs and splits it into multiple files based on the phylum of each specimen.
 For each taxid, the script queries the NCBI Taxonomy database to determine the phylum. It then creates separate output CSV files for each phylum found.
 ```bash
@@ -96,7 +96,7 @@ output.csv = Combined BLASt results file for each processed TSV file
 
 
 ## File manipulation
-## filer_mover.py
+### filer_mover.py
 Moves files containing user-specified string in the filename in one directory to another.
  ```bash
 python filer_mover.py <input_directory> <output_directory> <string_in_filename>
@@ -119,8 +119,7 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
  OUTPUT_FILE = ${INPUT_DIR##*/}.tar.gz
 
 ```
-
-## find_fastq.py
+### find_fastq.py
 Finds anc copies PE .fastq/.fastq.gz files containing user-specified string in the filename from one directory to another.
  ```bash
 python find_fastq.py --search <input_directory> --in <list_of_strings> --out <output_directory>
@@ -203,6 +202,23 @@ Input:
 Output:
     - Filtered CSV/TSV/XLSX file containing only rows where the specified column value matches 
       (case-insensitive, whitespace-normalized) any value in the filter text file
+```
+### Combine one TSV/CSV file with another CSV/TSV file using a common column for merging
+```
+python -c "
+import pandas as pd
+lab = pd.read_csv('lab.tsv', sep='\t')
+tax = pd.read_csv('taxonomy.tsv', sep='\t')
+merged = lab.merge(tax, on='Sample ID', how='outer')
+merged.to_csv('combined.tsv', sep='\t', index=False)
+print(f'Merged: {len(lab)} lab rows + {len(tax)} taxonomy rows -> {len(merged)} combined rows')
+"
+
+# Just change:
+	# lab.tsv
+	# taxonomy.csv
+	# Sample ID
+	# combined.tsv
 ```
 
 
