@@ -136,7 +136,6 @@ output:
 
 
 
-
 ## CSV/TSV manipulation
 ### merge_c-tsv_files.py
 Combine multiple CSV/TSV files into a single file, preserving header structure from first input file (subsequent input file columns will be reordered to align with the first input files header order).
@@ -220,7 +219,15 @@ print(f'Merged: {len(lab)} lab rows + {len(tax)} taxonomy rows -> {len(merged)} 
 	# Sample ID
 	# combined.tsv
 ```
+### debug_csv_encoding.py
+Diagnoses whether there are invalid characters in a CSV file, where and what those characters are (if any), and whether it is UTF-8 encoded.
+```
+python debug_csv_encoding.py [CSV_FILE] --max-issues 20 --show-valid-utf8
 
+Input = CSV file
+--max-issues = Maximum number of issues to display (if any)
+--show-valid-utf8 = Report valid UTF-8 multi-byte characters (e.g. accented letters)
+```
 
 
 ## FASTA file processing
