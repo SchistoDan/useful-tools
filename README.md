@@ -136,7 +136,7 @@ Gzip target directory using Pigz and packages it into a tarball (.tar.gz) file.
 
 ```
 ### find_fastq.py
-Finds anc copies PE .fastq/.fastq.gz files containing user-specified string in the filename from one directory to another.
+Finds anc copies PE .fastq/.fastq.gz files containing user-specified string in the filename from one directory to another. See `run_find_fastq.sh` for SLURM shell wrapper of find_fastq.py
  ```bash
 python find_fastq.py --search <input_directory> --in <list_of_strings> --out <output_directory>
 
