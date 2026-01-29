@@ -52,6 +52,18 @@ echo "Input: $INPUT"
 echo "Output directory: $OUTPUT_DIR"
 echo "Threads: $THREADS"
 
+# Function to extract BGE ID from filename (e.g., BGEPL476-24 from YB-4226-BGEPL476-24_S1626_L007_R1_001.fastq.gz)
+extract_bge_id() {
+    local filename="$1"
+    # Extract BGE ID pattern (BGE followed by letters and numbers, then dash and numbers)
+    if [[ "$filename" =~ (BGE[A-Z]+[0-9]+-[0-9]+) ]]; then
+        echo "${BASH_REMATCH[1]}"
+    else
+        # Fallback: return filename without extension and R1/R2 suffix
+        echo "$filename" | sed 's/_R[12].*$//'
+    fi
+}
+
 # Function to run fastp on a pair of files
 run_fastp() {
     local ID="$1"
@@ -139,12 +151,12 @@ elif [ -d "$INPUT" ]; then
     FOUND_FILES=0
     
     # Try .fq.gz extension first
-    for R1_FILE in "$INPUT"/*_R1.fq.gz; do
+    for R1_FILE in "$INPUT"/*_R1*.fq.gz; do
         [ -e "$R1_FILE" ] || break
         FOUND_FILES=1
         
-        # Construct R2 filename
-        R2_FILE="${R1_FILE/_R1.fq.gz/_R2.fq.gz}"
+        # Construct R2 filename by replacing _R1 with _R2
+        R2_FILE="${R1_FILE/_R1/_R2}"
         
         # Check if R2 exists
         if [ ! -f "$R2_FILE" ]; then
@@ -152,9 +164,9 @@ elif [ -d "$INPUT" ]; then
             continue
         fi
         
-        # Extract sample ID
+        # Extract BGE sample ID
         basename_r1=$(basename "$R1_FILE")
-        ID="${basename_r1/_R1.fq.gz/}"
+        ID=$(extract_bge_id "$basename_r1")
         
         echo "Processing sample: $ID"
         echo "  R1 file: $R1_FILE"
@@ -165,12 +177,12 @@ elif [ -d "$INPUT" ]; then
     
     # Try .fastq.gz extension if no .fq.gz files found
     if [ $FOUND_FILES -eq 0 ]; then
-        for R1_FILE in "$INPUT"/*_R1.fastq.gz; do
+        for R1_FILE in "$INPUT"/*_R1*.fastq.gz; do
             [ -e "$R1_FILE" ] || break
             FOUND_FILES=1
             
-            # Construct R2 filename
-            R2_FILE="${R1_FILE/_R1.fastq.gz/_R2.fastq.gz}"
+            # Construct R2 filename by replacing _R1 with _R2
+            R2_FILE="${R1_FILE/_R1/_R2}"
             
             # Check if R2 exists
             if [ ! -f "$R2_FILE" ]; then
@@ -178,9 +190,9 @@ elif [ -d "$INPUT" ]; then
                 continue
             fi
             
-            # Extract sample ID
+            # Extract BGE sample ID
             basename_r1=$(basename "$R1_FILE")
-            ID="${basename_r1/_R1.fastq.gz/}"
+            ID=$(extract_bge_id "$basename_r1")
             
             echo "Processing sample: $ID"
             echo "  R1 file: $R1_FILE"
@@ -191,7 +203,7 @@ elif [ -d "$INPUT" ]; then
     fi
     
     if [ $FOUND_FILES -eq 0 ]; then
-        echo "Error: No R1 FASTQ files (*_R1.fq.gz or *_R1.fastq.gz) found in $INPUT"
+        echo "Error: No R1 FASTQ files (*_R1*.fq.gz or *_R1*.fastq.gz) found in $INPUT"
         exit 1
     fi
 
