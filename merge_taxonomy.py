@@ -3,7 +3,7 @@ import pandas as pd
 import argparse
 import sys
 
-def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, encoding2=None, use_identification=False):
+def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, encoding2=None, use_identification=False, include_subspecies=False):
     """
     Merge taxonomic data between File1 and File2 based on matching Process IDs.
     
@@ -15,7 +15,10 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
     If use_identification=True, the 'Identification' column from File2 is used to populate
     the 'species' column in File1, rather than requiring separate taxonomy columns.
     
+    If include_subspecies=True, the 'Subspecies' column from File2 is added to File1.
+    
     Supports CSV, TSV, and XLSX files with auto-detection of delimiters.
+    Column matching is case-insensitive.
     """
     
     def detect_delimiter(filepath, sample_size=8192):
@@ -74,6 +77,39 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
         
         return pd.read_csv(filepath, encoding=encoding, sep=delimiter)
     
+    def normalise_columns(df):
+        """
+        Rename columns to standard names based on case-insensitive matching.
+        This allows the rest of the script to use consistent column names.
+        """
+        # Map lowercase column names to standard names used in the script
+        column_mapping = {
+            'process id': 'Process ID',
+            'processid': 'Process ID',
+            'taxon': 'TAXON',
+            'phylum': 'Phylum',
+            'class': 'Class',
+            'order': 'Order',
+            'family': 'Family',
+            'genus': 'Genus',
+            'species': 'Species',
+            'subspecies': 'Subspecies',
+            'identification': 'Identification',
+            'taxid': 'taxid',
+            'matched_rank': 'matched_rank',
+            'lineage': 'lineage',
+            'lineage_mismatch': 'lineage_mismatch'
+        }
+        
+        new_columns = {}
+        for col in df.columns:
+            col_lower = col.lower().strip()
+            if col_lower in column_mapping:
+                new_columns[col] = column_mapping[col_lower]
+        if new_columns:
+            df.rename(columns=new_columns, inplace=True)
+        return df
+    
     try:
         # Read files with auto-detection
         try:
@@ -98,10 +134,14 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
             print(f"Error reading File2: {str(e)}")
             return []
         
+        # Normalise column names to handle case variations
+        file1_df = normalise_columns(file1_df)
+        file2_df = normalise_columns(file2_df)
+        
         # Verify the required columns exist in File1
         required_columns_file1 = [
-            'Process ID', 'phylum', 'class', 'order', 'family', 'genus', 
-            'species', 'taxid', 'matched_rank', 'lineage', 'lineage_mismatch'
+            'Process ID', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 
+            'Species', 'taxid', 'matched_rank', 'lineage', 'lineage_mismatch'
         ]
         missing_columns = [col for col in required_columns_file1 if col not in file1_df.columns]
         if missing_columns:
@@ -123,9 +163,9 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
             if missing_columns:
                 raise ValueError(f"File2 is missing these required columns: {', '.join(missing_columns)}")
             
-            # Create a simple mapping: Identification -> species
-            taxonomy_mapping = {'Identification': 'species'}
-            print("Using 'Identification' column to populate 'species' field")
+            # Create a simple mapping: Identification -> Species
+            taxonomy_mapping = {'Identification': 'Species'}
+            print("Using 'Identification' column to populate 'Species' field")
         else:
             # Default mode: require full taxonomy columns
             required_columns_file2 = [process_id_col, 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species']
@@ -135,13 +175,26 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
             
             # Create a mapping of taxonomic columns from File2 to File1
             taxonomy_mapping = {
-                'Phylum': 'phylum',
-                'Class': 'class',
-                'Order': 'order',
-                'Family': 'family',
-                'Genus': 'genus',
-                'Species': 'species'
+                'Phylum': 'Phylum',
+                'Class': 'Class',
+                'Order': 'Order',
+                'Family': 'Family',
+                'Genus': 'Genus',
+                'Species': 'Species'
             }
+        
+        # Handle subspecies column if requested
+        if include_subspecies:
+            if 'Subspecies' not in file2_df.columns:
+                print("WARNING: --subspecies flag provided but 'Subspecies' column not found in File2")
+            else:
+                print("Including 'Subspecies' column from File2")
+                # Add subspecies column to File1 if it doesn't exist
+                if 'Subspecies' not in file1_df.columns:
+                    file1_df['Subspecies'] = None
+                    print("  Added 'Subspecies' column to File1")
+                # Add to taxonomy mapping
+                taxonomy_mapping['Subspecies'] = 'Subspecies'
         
         # Create a mapping of metadata columns to update in File1
         metadata_mapping = {
@@ -152,19 +205,7 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
         }
         
         # Check if File2 has the metadata columns
-        metadata_in_file2 = {}
-        for file1_col, file2_col in metadata_mapping.items():
-            lowercase_cols = [col.lower() for col in file2_df.columns]
-            if file2_col.lower() in lowercase_cols:
-                # Find the actual column name with proper case
-                idx = lowercase_cols.index(file2_col.lower())
-                actual_col = file2_df.columns[idx]
-                metadata_in_file2[file1_col] = actual_col
-            elif file1_col.lower() in lowercase_cols:
-                # Try the File1 column name in File2
-                idx = lowercase_cols.index(file1_col.lower())
-                actual_col = file2_df.columns[idx]
-                metadata_in_file2[file1_col] = actual_col
+        metadata_in_file2 = {k: v for k, v in metadata_mapping.items() if v in file2_df.columns}
         
         if metadata_in_file2:
             print(f"Found metadata columns in File2: {', '.join(metadata_in_file2.values())}")
@@ -177,6 +218,9 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
         
         # Track species updates (only used in --use-identification mode)
         species_updates = []  # List of dicts: {'process_id': ..., 'old_species': ..., 'new_species': ...}
+        
+        # Track subspecies updates
+        subspecies_updates = []  # List of dicts: {'process_id': ..., 'subspecies': ...}
         
         # Create a copy of file1_df to modify
         result_df = file1_df.copy()
@@ -194,7 +238,7 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
                     new_value = row[file2_col]
                     
                     # In identification mode, only update species if values differ
-                    if use_identification and file1_col == 'species':
+                    if use_identification and file1_col == 'Species':
                         # Get current species value(s) for matching rows
                         current_values = result_df.loc[matching_rows, file1_col].values
                         for idx, current_value in zip(result_df.loc[matching_rows].index, current_values):
@@ -216,6 +260,15 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
                                 })
                                 # Apply the update
                                 result_df.loc[idx, file1_col] = new_value
+                    elif file1_col == 'Subspecies':
+                        # Track subspecies updates
+                        new_str = str(new_value).strip() if pd.notna(new_value) else ''
+                        if new_str:
+                            subspecies_updates.append({
+                                'process_id': process_id,
+                                'subspecies': new_value
+                            })
+                        result_df.loc[matching_rows, file1_col] = new_value
                     else:
                         # Default mode: always update
                         result_df.loc[matching_rows, file1_col] = new_value
@@ -320,6 +373,23 @@ def merge_taxonomy_data(file1_path, file2_path, output_path, encoding1=None, enc
         elif use_identification:
             print("\nNo species values were updated (all Identification values matched existing species values).")
         
+        # Report subspecies updates if subspecies flag was used
+        if include_subspecies and subspecies_updates:
+            print(f"\n--- Subspecies Added ({len(subspecies_updates)} records) ---")
+            for update in subspecies_updates:
+                print(f"  {update['process_id']}: '{update['subspecies']}'")
+            
+            # Also save subspecies updates to a log file
+            if output_lower.endswith(('.xlsx', '.xls')):
+                subspecies_log_path = output_path.replace('.xlsx', '_subspecies_updates.csv').replace('.xls', '_subspecies_updates.csv')
+            else:
+                subspecies_log_path = output_path.replace('.csv', '_subspecies_updates.csv')
+            subspecies_df = pd.DataFrame(subspecies_updates)
+            subspecies_df.to_csv(subspecies_log_path, index=False, encoding='utf-8')
+            print(f"\nSubspecies updates log saved to: {subspecies_log_path}")
+        elif include_subspecies:
+            print("\nNo subspecies values were added (no non-empty Subspecies values found in File2 for matched samples).")
+        
         return unmatched_ids
     
     except Exception as e:
@@ -339,6 +409,8 @@ def main():
     parser.add_argument('--use-identification', action='store_true',
                         help="Use 'Identification' column from File2 to populate 'species' in File1, "
                              "instead of requiring separate Phylum/Class/Order/Family/Genus/Species columns")
+    parser.add_argument('--subspecies', action='store_true',
+                        help="Include 'Subspecies' column from File2, adding it to File1 if not present")
     
     if len(sys.argv) == 1:
         parser.print_help()
@@ -349,7 +421,7 @@ def main():
     # Perform the merge
     unmatched_ids = merge_taxonomy_data(args.file1, args.file2, args.output, 
                                         args.encoding1, args.encoding2, 
-                                        args.use_identification)
+                                        args.use_identification, args.subspecies)
     
     # Report unmatched IDs
     if unmatched_ids:
