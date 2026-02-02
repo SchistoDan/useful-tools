@@ -28,17 +28,27 @@ output:
 - TXT file with taxonomy information
 ```
 ### taxonomy_splitter.py
-This script takes a CSV file containing specimen information with NCBI taxonomic IDs and splits it into multiple files based on the phylum of each specimen.
-For each taxid, the script queries the NCBI Taxonomy database to determine the phylum. It then creates separate output CSV files for each phylum found.
+Splits a CSV, TSV, or XLSX file into multiple files based on a specified taxonomic rank. Supports two modes: querying NCBI Taxonomy via taxid, or using existing taxonomy columns in the file.
+
 ```bash
-python taxonomy_splitter.py --input your_input_file.csv --email your.email@example.com
+# NCBI API mode - looks up taxonomy from taxid column
+python taxonomy_splitter.py -i specimens.csv -e you@example.com
+python taxonomy_splitter.py -i specimens.csv -e you@example.com -r order
 
-input CSV:
-- ID,forward,reverse,taxid,type_status
-
-output CSV(s):
-- Named [input_file_name_without_ext]_[phylum].csv
+# Taxonomy column mode - uses existing taxonomy columns
+python taxonomy_splitter.py -i specimens.tsv --use-taxonomy
+python taxonomy_splitter.py -i specimens.tsv --use-taxonomy -r family
 ```
+
+| Argument | Description |
+|----------|-------------|
+| `-i, --input` | Input file (CSV, TSV, or XLSX - auto-detected) |
+| `-e, --email` | Email for NCBI API (required unless `--use-taxonomy`) |
+| `-r, --rank` | Taxonomic rank to split on (default: `phylum`) |
+| `-t, --use-taxonomy` | Use taxonomy columns (phylum->species) from file instead of NCBI API |
+
+**Output:** `[input_basename]_[rank_value].[ext]` — format matches input (CSV→CSV, TSV→TSV, XLSX→XLSX)
+
 ### merge_taxonomy.py
 Merge taxonomic data between File1 and File2 based on matching Process IDs.
     1. Adds taxonomic data from File2 to File1 (Phylum, Class, Order, Family, Genus, Species)
