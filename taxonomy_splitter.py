@@ -1,26 +1,41 @@
 #!/usr/bin/env python3
 """
-NCBI Taxonomy File Splitter
+Taxonomy File Splitter
 
-This script takes a CSV, TSV, or XLSX file containing specimen information with NCBI 
-taxonomy IDs and splits it into multiple files based on a specified taxonomic rank.
+Splits a CSV, TSV, or XLSX file into multiple files based on a specified taxonomic 
+rank (phylum, class, order, family, genus, etc.).
 
-The input file should have columns including a 'taxid' column (or taxid in position 4).
+Two modes of operation:
+1. NCBI API mode (default): Queries NCBI Taxonomy database using taxid column
+2. Taxonomy column mode (--use-taxonomy): Uses existing taxonomy columns in the file
 
-For each taxid, the script queries the NCBI Taxonomy database to determine the 
-taxonomic rank (default: phylum). It then creates separate output files for each 
-unique value of that rank.
+Input:
+    - CSV, TSV, or XLSX file (auto-detected)
+    - NCBI mode: requires taxid in column 4
+    - Taxonomy mode: requires column matching the specified --rank
 
-Output files are named: [input_file_name_without_ext]_[rank_value].[original_extension]
+Output:
+    - Multiple files named: [input_basename]_[rank_value].[original_extension]
+    - Output format matches input format (CSV -> CSV, TSV -> TSV, XLSX -> XLSX)
 
 Usage:
-    python split_by_rank.py --input your_input_file.csv --email your.email@example.com
-    python split_by_rank.py --input data.tsv --email you@example.com --rank order
-    python split_by_rank.py --input data.xlsx --email you@example.com -r class
+    # NCBI API mode - queries NCBI for taxonomy info
+    python taxonomy_splitter.py -i specimens.csv -e you@example.com
+    python taxonomy_splitter.py -i specimens.tsv -e you@example.com -r order
+
+    # Taxonomy column mode - uses existing columns in file
+    python taxonomy_splitter.py -i specimens.tsv --use-taxonomy
+    python taxonomy_splitter.py -i specimens.xlsx -t -r family
+
+Arguments:
+    -i, --input         Input file path (required)
+    -e, --email         Email for NCBI API (required unless --use-taxonomy)
+    -r, --rank          Taxonomic rank to split on (default: phylum)
+    -t, --use-taxonomy  Use taxonomy columns from file instead of NCBI API
 
 Requirements:
-    - biopython
-    - openpyxl (for xlsx support)
+    - biopython (for NCBI API mode)
+    - openpyxl (for XLSX support)
 """
 
 import argparse
@@ -34,11 +49,21 @@ def parse_arguments():
         description='Split CSV/TSV/XLSX file by taxonomic rank based on taxids.'
     )
     parser.add_argument('--input', '-i', required=True, help='Input file path (CSV, TSV, or XLSX)')
-    parser.add_argument('--email', '-e', required=True, help='Email address for NCBI API access')
+    parser.add_argument(
+        '--email', '-e', 
+        required=False,
+        help='Email address for NCBI API access (required unless --use-taxonomy is set)'
+    )
     parser.add_argument(
         '--rank', '-r', 
         default='phylum', 
         help='Taxonomic rank to split on (default: phylum). Case-insensitive.'
+    )
+    parser.add_argument(
+        '--use-taxonomy', '-t',
+        action='store_true',
+        help='Use taxonomy columns from input file instead of querying NCBI. '
+             'Requires a column matching the specified --rank.'
     )
     return parser.parse_args()
 
@@ -120,6 +145,15 @@ def get_extension(file_type):
         return '.csv'
 
 
+def find_column_index(header, column_name):
+    """Find column index by name (case-insensitive). Returns None if not found."""
+    column_name_lower = column_name.lower()
+    for i, col in enumerate(header):
+        if str(col).lower() == column_name_lower:
+            return i
+    return None
+
+
 def get_rank_for_taxid(taxid, email, target_rank):
     """Retrieve taxonomic rank value for a given taxid using NCBI's API."""
     Entrez.email = email
@@ -158,6 +192,12 @@ def main():
     input_file = args.input
     email = args.email
     target_rank = args.rank.lower()
+    use_taxonomy = args.use_taxonomy
+    
+    # Validate email is provided when using NCBI API mode
+    if not use_taxonomy and not email:
+        print("Error: --email is required when not using --use-taxonomy mode.")
+        return
     
     # Get base filename for output
     input_basename = os.path.splitext(os.path.basename(input_file))[0]
@@ -169,37 +209,64 @@ def main():
     print(f"Detected file type: {file_type}" + (f" (delimiter: {'tab' if delimiter == chr(9) else repr(delimiter)})" if delimiter else ""))
     print(f"Splitting by rank: {target_rank}")
     
+    # Determine mode and validate
+    if use_taxonomy:
+        print("Mode: Using taxonomy columns from file")
+        rank_col_idx = find_column_index(header, target_rank)
+        if rank_col_idx is None:
+            print(f"Error: Column '{target_rank}' not found in header.")
+            print(f"Available columns: {', '.join(str(h) for h in header)}")
+            return
+        print(f"Found '{target_rank}' column at index {rank_col_idx}")
+    else:
+        print("Mode: Querying NCBI Taxonomy API")
+    
     # Group rows by taxonomic rank
     rank_data = {}
-    rank_mapping = {}  # Cache taxid to rank value mapping
+    rank_mapping = {}  # Cache taxid to rank value mapping (only used in API mode)
     
     for row in data_rows:
-        if len(row) < 4:
-            print(f"Warning: Skipping invalid row: {row}")
-            continue
-        
-        taxid = row[3]
-        
-        # Skip empty taxids
-        if not taxid or str(taxid).strip() == '':
-            print(f"Warning: Skipping row with empty taxid: {row[0] if row else 'unknown'}")
-            continue
-        
-        # Get rank value, using cache if available
-        if taxid in rank_mapping:
-            rank_value = rank_mapping[taxid]
+        if use_taxonomy:
+            # Get rank value directly from column
+            if len(row) <= rank_col_idx:
+                print(f"Warning: Skipping row with insufficient columns: {row}")
+                continue
+            
+            rank_value = str(row[rank_col_idx]).strip() if row[rank_col_idx] else "Unknown"
+            if not rank_value:
+                rank_value = "Unknown"
+            
+            row_id = row[0] if row else "unknown"
+            
         else:
-            rank_value = get_rank_for_taxid(taxid, email, target_rank)
-            rank_mapping[taxid] = rank_value
-            # Be nice to NCBI's API with a short delay
-            time.sleep(0.35)
+            # Original NCBI API mode
+            if len(row) < 4:
+                print(f"Warning: Skipping invalid row: {row}")
+                continue
+            
+            taxid = row[3]
+            row_id = row[0] if row else "unknown"
+            
+            # Skip empty taxids
+            if not taxid or str(taxid).strip() == '':
+                print(f"Warning: Skipping row with empty taxid: {row_id}")
+                continue
+            
+            # Get rank value, using cache if available
+            if taxid in rank_mapping:
+                rank_value = rank_mapping[taxid]
+            else:
+                rank_value = get_rank_for_taxid(taxid, email, target_rank)
+                rank_mapping[taxid] = rank_value
+                # Be nice to NCBI's API with a short delay
+                time.sleep(0.35)
         
         # Add row to the appropriate rank group
         if rank_value not in rank_data:
             rank_data[rank_value] = []
         rank_data[rank_value].append(row)
         
-        print(f"Processed taxid {taxid}: {row[0]} belongs to {target_rank} {rank_value}")
+        print(f"Processed: {row_id} -> {target_rank}: {rank_value}")
     
     # Write output files for each rank value
     extension = get_extension(file_type)
