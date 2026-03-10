@@ -15,6 +15,21 @@ input:
 output:
 - CSV file with taxid, matched_rank (taxonomic rank taxid corresponds to), NCBI lineage for taxid, lineage_mismatch (yes=higher taxonomy of input taxonomic heirarchy does not match higher taxonomy of fetched lineage) appended.
 ```
+### pull_ncbi_lieaneges-contained.py
+Fetches heirarchical taxonomy (phylum->species) for N samples listed in the given input samples.csv using their taxids. Script originally written by Maria Kamouyiaros @NHMUK, and adapted to be self-contained.
+```bash
+python pull_ncbi_lieaneges-contained.py --input_csv --output_csv --email --api_key --taxcolumn --log_file --sheet
+
+input:
+--input_csv = Path to the input samples.csv file (containing sample unique ID, and taxid columns)
+--email = NCBI email address for API
+--api_key = NCBI key for API
+--taxcolumn = Column header that contains the taxids
+--log_file = Path to log file
+--sheet = Sheet number to read if input is XLSX
+output:
+--output_csv = Path to the output CSV file
+```
 ### taxonomy_analyser.py
 Determines the number of unique taxa at each rank (phylum, class, order, family, genus, species), the number of unique families per class, and the number of unique families per order. Requires a list of Process IDs (no header), and a CSV file containing the same Process IDs and heirarchical taxonomy information (i.e. columns for phylum, class, order, family, genus, species).
 ```bash
