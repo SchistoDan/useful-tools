@@ -29,17 +29,36 @@ import time
 
 def detect_separator(filepath):
     """
-    Detect the field separator from a file's extension.
+    Detect the field separator from a file's extension, falling back to sniffing
+    the file content if the extension is ambiguous or missing.
 
     Parameters:
     filepath (str): Path to the file
 
     Returns:
-    str: '\\t' for TSV files (.tsv, .txt), ',' for CSV files
+    str: '\\t' for TSV files, ',' for CSV files
     """
     ext = os.path.splitext(filepath)[1].lower()
     if ext in ('.tsv', '.txt'):
         return '\t'
+    if ext == '.csv':
+        return ','
+
+    # Ambiguous or missing extension — sniff the first non-empty line
+    try:
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    tab_count   = line.count('\t')
+                    comma_count = line.count(',')
+                    if tab_count > comma_count:
+                        print(f"  (separator sniffed as TSV from file content)")
+                        return '\t'
+                    break
+    except OSError:
+        pass
+
     return ','
 
 
