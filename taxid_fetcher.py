@@ -2,16 +2,17 @@
 """
 Taxonomy ID Fetcher
 
-This script processes a CSV file containing taxonomic information to fetch and append
+This script processes a CSV or TSV file containing taxonomic information to fetch and append
 taxonomic IDs (taxids) using the NCBI taxonomic database.
 
 Usage:
-    python taxid_fetcher.py <input_csv> <rankedlineage_path> <output_csv>
+    python taxid_fetcher.py <input_file> <rankedlineage_path> <output_file>
 
 Arguments:
-    input_csv: Path to the input CSV file containing taxonomy information
+    input_file: Path to the input CSV or TSV file containing taxonomy information
     rankedlineage_path: Path to the rankedlineage.dmp file for taxonomic resolution
-    output_csv: Path where the output CSV with appended taxids will be saved
+    output_file: Path where the output file with appended taxids will be saved
+                 (format auto-detected from extension: .csv or .tsv/.txt)
 
 Dependencies:
     - pandas
@@ -24,6 +25,22 @@ import pandas as pd
 import csv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+
+
+def detect_separator(filepath):
+    """
+    Detect the field separator from a file's extension.
+
+    Parameters:
+    filepath (str): Path to the file
+
+    Returns:
+    str: '\\t' for TSV files (.tsv, .txt), ',' for CSV files
+    """
+    ext = os.path.splitext(filepath)[1].lower()
+    if ext in ('.tsv', '.txt'):
+        return '\t'
+    return ','
 
 
 def load_rankedlineage(rankedlineage_path):
@@ -326,25 +343,34 @@ def process_row(row, tax_data):
     return result
 
 
-def process_csv(input_csv, rankedlineage_path, output_csv):
+def process_csv(input_file, rankedlineage_path, output_file):
     """
-    Process the input CSV file to fetch taxids and generate the output CSV
-    
+    Process the input CSV/TSV file to fetch taxids and generate the output file.
+    File format (CSV or TSV) is auto-detected from the file extension.
+
     Parameters:
-    input_csv (str): Path to the input CSV file
+    input_file (str): Path to the input CSV or TSV file
     rankedlineage_path (str): Path to the rankedlineage.dmp file
-    output_csv (str): Path to save the output CSV file
+    output_file (str): Path to save the output file
     """
-    print(f"Starting processing of {input_csv}")
-    
+    print(f"Starting processing of {input_file}")
+
+    # Auto-detect separators from file extensions
+    input_sep = detect_separator(input_file)
+    output_sep = detect_separator(output_file)
+    input_fmt = "TSV" if input_sep == '\t' else "CSV"
+    output_fmt = "TSV" if output_sep == '\t' else "CSV"
+    print(f"Input format detected: {input_fmt}")
+    print(f"Output format detected: {output_fmt}")
+
     # Load the taxonomic data
     tax_data = load_rankedlineage(rankedlineage_path)
     
-    # Read the input CSV file with proper handling of missing values
-    df = pd.read_csv(input_csv, na_values=['', 'NA', 'N/A', 'nan', 'NaN'])
+    # Read the input file with proper handling of missing values
+    df = pd.read_csv(input_file, sep=input_sep, na_values=['', 'NA', 'N/A', 'nan', 'NaN'])
     
     # Print column names to help with debugging
-    print(f"CSV columns found: {list(df.columns)}")
+    print(f"Columns found: {list(df.columns)}")
     
     # Check if expected taxonomy columns exist
     required_columns = ['phylum', 'class', 'order', 'family', 'genus', 'species']
@@ -398,30 +424,30 @@ def process_csv(input_csv, rankedlineage_path, output_csv):
                 results.append(row_copy)
                 processed_rows += 1
     
-    # Convert results back to DataFrame and save to output CSV
+    # Convert results back to DataFrame and save to output file
     result_df = pd.DataFrame(results)
-    result_df.to_csv(output_csv, index=False)
+    result_df.to_csv(output_file, sep=output_sep, index=False)
     
-    print(f"\nOutput saved to {output_csv}")
+    print(f"\nOutput saved to {output_file}")
     print(f"Total processing time: {time.time() - start_time:.2f} seconds")
     print(f"Successfully processed {successful_rows} out of {total_rows} rows")
 
 
 if __name__ == "__main__":
     if len(sys.argv) == 4:
-        input_csv = sys.argv[1]
+        input_file = sys.argv[1]
         rankedlineage_path = sys.argv[2]
-        output_csv = sys.argv[3]
+        output_file = sys.argv[3]
         
-        if not os.path.isfile(input_csv):
-            print(f"Error: Input CSV file '{input_csv}' not found.")
+        if not os.path.isfile(input_file):
+            print(f"Error: Input file '{input_file}' not found.")
             sys.exit(1)
             
         if not os.path.isfile(rankedlineage_path):
             print(f"Error: Rankedlineage file '{rankedlineage_path}' not found.")
             sys.exit(1)
             
-        process_csv(input_csv, rankedlineage_path, output_csv)
+        process_csv(input_file, rankedlineage_path, output_file)
     else:
-        print("Usage: python taxonomy_id_fetcher.py <input_csv> <rankedlineage_path> <output_csv>")
+        print("Usage: python taxid_fetcher.py <input_file> <rankedlineage_path> <output_file>")
         sys.exit(1)
