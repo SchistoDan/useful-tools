@@ -2,12 +2,6 @@
 """
 Script to filter a multi-FASTA file based on a list of headers to remove.
 Creates two output files: one with remaining sequences and one with removed sequences.
-
-Requires:
-input_fasta: A multi-FASTA file with sequences to remove
-headers_file: A txt file with 1 FASTA sequence header per line to find and remove in the input_fasta
--k/--keep: A multi-FASTA file = input_fasta - headers (and corresponding sequences) in headers_file
--r/--remove: A multi-FASTA file containing sequences removed from input_fasta
 """
 
 import argparse
@@ -31,7 +25,20 @@ def read_headers_to_remove(header_file):
         print(f"Error: Header file '{header_file}' not found.")
         sys.exit(1)
 
-def filter_fasta(input_fasta, headers_to_remove, output_kept, output_removed):
+def header_matches(header_id, headers_to_remove, delimiter=None):
+    """Check if a header matches any of the headers to remove.
+    
+    If delimiter is provided, split the header on the delimiter and check
+    whether the first field matches any entry in the removal set.
+    Otherwise, perform an exact match against the full header.
+    """
+    if delimiter:
+        header_prefix = header_id.split(delimiter)[0]
+        return header_prefix in headers_to_remove
+    else:
+        return header_id in headers_to_remove
+
+def filter_fasta(input_fasta, headers_to_remove, output_kept, output_removed, delimiter=None):
     """Filter FASTA file based on headers to remove."""
     
     kept_count = 0
@@ -66,7 +73,7 @@ def filter_fasta(input_fasta, headers_to_remove, output_kept, output_removed):
                     
                     # Check if this header should be removed
                     header_id = line[1:]  # Remove '>' character
-                    should_remove = header_id in headers_to_remove
+                    should_remove = header_matches(header_id, headers_to_remove, delimiter)
                     
                 else:
                     # Add sequence line
@@ -100,6 +107,11 @@ def main():
                        help='Output file for kept sequences (default: kept_sequences.fasta)')
     parser.add_argument('-r', '--removed', default='removed_sequences.fasta',
                        help='Output file for removed sequences (default: removed_sequences.fasta)')
+    parser.add_argument('-d', '--delimiter', default=None,
+                       help='Delimiter to split FASTA headers on before matching. '
+                            'When provided, only the first field of the header (before the delimiter) '
+                            'is compared to the removal list. Without this, full exact matching is used. '
+                            'E.g. --delimiter "|" to match on the sample ID before the pipe.')
     
     args = parser.parse_args()
     
@@ -108,13 +120,19 @@ def main():
     headers_to_remove = read_headers_to_remove(args.headers_file)
     print(f"Found {len(headers_to_remove)} headers to remove")
     
+    if args.delimiter:
+        print(f"Using delimiter '{args.delimiter}' for partial header matching (first field only)")
+    else:
+        print("Using exact full-header matching")
+    
     # Filter FASTA file
     print(f"Processing FASTA file: {args.input_fasta}")
     kept_count, removed_count = filter_fasta(
         args.input_fasta, 
         headers_to_remove, 
         args.kept, 
-        args.removed
+        args.removed,
+        args.delimiter
     )
     
     print(f"\nResults:")
