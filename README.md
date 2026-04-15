@@ -403,7 +403,36 @@ Output format:
     - Results are sorted alphabetically for consistency
 ```
 
+## skim2mito output processing
+### assess_mitogenomes.py
+Recursively finds all summary_contigs_mqc.txt files under one or more given
+input directories, combines them, checks for duplicate sample IDs across files
+(warns and exits if found), then produces:
+  - A text quality report
+  - A per-sample summary TSV
+```
+python assess_mitogenomes.py /path/to/input/directory --report {INPUT_DIR}/mitogenome_report.txt --summary_tsv {INPUT_DIR}/mitogenome_summary.tsv
+```
 
+### filter_mitogenes.py
+Filters sequences from mitochondrial gene FASTA files based on four criteria
+(applied in order; a sequence must pass all four to be retained):
+  1. Minimum length: sequence must be >= half the average insect CDS/gene length.
+  2. Non-fragmented: sequences with a trailing _N suffix on the gene name in the
+     header (e.g. rrnS_2, rrnS_1) are considered fragmented and excluded.
+  3. Multi-contig duplicate: if the same gene appears on more than one contig
+     for the same sample after the length filter, all copies are excluded.
+     Running this after the length filter means a short copy on one contig is
+     already gone before duplicates are assessed, correctly resolving the common
+     case where one copy is too short to be useful.
+  4. Taxonomy: the contig from which the sequence was annotated must have
+     Class == 'Insecta' in the summary TSV. Sequences from contigs with any
+     other Class value (e.g. 'no-hit', 'Malacostraca') are excluded.
+     Only the Class column is checked; higher-rank no-hits are ignored.
+
+```
+python filter_mitogenes.py --input /path/to/fasta/dir --genes cox1,cox2,cob,rrnL,rrnS --summary /path/to/summary.tsv [--output /path/to/output/dir]
+```
 
 ### Run Fatsp, and parse Fastp read QC statistics
 ## fastp_run.sh
