@@ -191,6 +191,8 @@ python rename_files.py (--input-dir DIR | --file-list FILE) [--old-delim OLD] [-
 --new-delim/-e: Replacement delimiter (e.g. "-") 
 --dry-run/-n:  Print planned renames without making any changes (default: False)
 ```
+> -d and -f are mutually exclusive = one is required.
+
 ---
 
 
